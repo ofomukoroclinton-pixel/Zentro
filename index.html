@@ -2336,172 +2336,160 @@ async function repairZentroFeed() {
   const feed = document.getElementById("feedList");
   if (!feed) return;
 
-  feed.innerHTML = "<p>Loading posts...</p>";
-
-  const { data: posts, error } = await supabaseClient
-    .from("posts")
-    .select("id, user_id, content, image_url, created_at, profiles(username, display_name, avatar_url)")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Feed error:", error);
-    feed.innerHTML = "<p>Could not load posts. Please try again.</p>";
-    return;
-  }
-
-  if (!posts || posts.length === 0) {
-    feed.innerHTML = "<p>No posts yet. Be the first to share!</p>";
-    return;
-  }
-
-  const safe = value =>
-    String(value || "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
-
-  feed.innerHTML = posts.map(post => {
-    const profile = Array.isArray(post.profiles)
-      ? post.profiles[0]
-      : post.profiles;
-
-    const name = profile?.display_name ||
-      profile?.username || "Zentro User";
-
-    const photo = post.image_url
-      ? `<img src="${safe(post.image_url)}"
-          alt="Post photo"
-          style="width:100%;max-height:400px;object-fit:cover;border-radius:10px;">`
-      : "";
-
-    return `
-      <article class="post-card"
-        style="padding:15px;margin:12px 0;border:1px solid #ddd;border-radius:12px;">
-
-        <strong>${safe(name)}</strong>
-        <p style="white-space:pre-wrap;">${safe(post.content)}</p>
-
-        ${photo}
-
-        <small>${safe(new Date(post.created_at).toLocaleString())}</small>
-
-        <div class="post-actions" style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-          <button type="button" data-action="like" data-id="${safe(post.id)}">♡ Like</button>
-          <button type="button" data-action="comment" data-id="${safe(post.id)}">Comment</button>
-          <button type="button" data-action="share" data-id="${safe(post.id)}">Share</button>
-        </div>
-
-        <div class="comment-area" id="comments-${safe(post.id)}"></div>
-      </article>
-    `;
-  }).join("");
-}
-
-/* END FEED REPAIR PART 1 */
-  /* ZENTRO PHOTO POST REPAIR - PART 2 */
-
-async function repairZentroPublish(event) {
-  if (event) event.preventDefault();
-
-  if (!currentUser) {
-    alert("Please log in before publishing.");
-    return;
-  }
-
-  const textInput = document.getElementById("postText");
-  const imageInput = document.getElementById("postImage");
-
-  const content = textInput ? textInput.value.trim() : "";
-  const file = imageInput?.files?.[0];
-
-  if (!content && !file) {
-    alert("Write something or select a photo first.");
-    return;
-  }
-
-  const form = document.getElementById("createPostForm");
-  const button = form?.querySelector('button[type="submit"]');
+  feed.innerHTML = '<p>Loading posts...</p>';
 
   try {
-    if (button) {
-      button.disabled = true;
-      button.textContent = "Publishing...";
+    // Load posts.
+    const { data: posts, error: postsError } =
+      await supabaseClient
+        .from("posts")
+        .select("id, user_id, content, image_url, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+    if (postsError) throw postsError;
+
+    if (!posts || posts.length === 0) {
+      feed.innerHTML =
+        '<div class="card empty-state">No posts yet.</div>';
+      return;
     }
 
-    let imageUrl = null;
+    const postIds = posts.map(post => post.id);
+    const userIds = [
+      ...new Set(posts.map(post => post.user_id).filter(Boolean))
+    ];
 
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        throw new Error("Please select an image file.");
-      }
+    // Load authors.
+    let profiles = [];
 
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error("Please choose an image smaller than 5 MB.");
-      }
+    if (userIds.length) {
+      const { data, error } = await supabaseClient
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .in("id", userIds);
 
-      const extension = file.name.split(".").pop().toLowerCase();
-      const safeExtension = /^[a-z0-9]+$/.test(extension)
-        ? extension
-        : "jpg";
-
-      const filePath =
-        currentUser.id + "/" + crypto.randomUUID() + "." + safeExtension;
-
-      const { error: uploadError } = await supabaseClient
-        .storage
-        .from("post-images")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: file.type
-        });
-
-      if (uploadError) {
-        throw new Error(
-          "Photo upload failed. Check that the post-images storage bucket exists and allows uploads for signed-in users. " +
-          uploadError.message
-        );
-      }
-
-      const { data: urlData } = supabaseClient
-        .storage
-        .from("post-images")
-        .getPublicUrl(filePath);
-
-      imageUrl = urlData.publicUrl;
+      if (error) throw error;
+      profiles = data || [];
     }
 
-    const { error: postError } = await supabaseClient
-      .from("posts")
-      .insert({
-        user_id: currentUser.id,
-        content: content,
-        image_url: imageUrl
-      });
+    const profileMap = new Map(
+      profiles.map(profile => [profile.id, profile])
+    );
 
-    if (postError) {
-      throw postError;
-    }
+    // Load likes for all displayed posts.
+    const { data: likes, error: likesError } =
+      await supabaseClient
+        .from("post_likes")
+        .select("post_id, user_id")
+        .in("post_id", postIds);
 
-    if (textInput) textInput.value = "";
-    if (imageInput) imageInput.value = "";
+    if (likesError) throw likesError;
 
-    alert("Your post was published successfully!");
-    await repairZentroFeed();
+    const likeCounts = {};
+    const likedByMe = new Set();
+
+    (likes || []).forEach(like => {
+      likeCounts[like.post_id] =
+        (likeCounts[like.post_id] || 0) + 1;
+
+      if (currentUser && like.user_id === currentUser.id) {
+        likedByMe.add(like.post_id);
+      }
+    });
+
+    const safe = value =>
+      String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+
+    feed.innerHTML = posts.map(post => {
+      const profile = profileMap.get(post.user_id) || {};
+      const name =
+        profile.display_name ||
+        profile.username ||
+        "Zentro User";
+
+      const count = likeCounts[post.id] || 0;
+      const isLiked = likedByMe.has(post.id);
+
+      const avatar = profile.avatar_url
+        ? `<img src="${safe(profile.avatar_url)}"
+             class="avatar" alt="Profile photo"
+             style="object-fit:cover;">`
+        : `<div class="avatar">${safe(
+            name.split(/\s+/)
+              .slice(0, 2)
+              .map(word => word[0] || "")
+              .join("")
+              .toUpperCase()
+          )}</div>`;
+
+      const photo = post.image_url
+        ? `<img src="${safe(post.image_url)}"
+             class="post-image" alt="Post photo">`
+        : "";
+
+      return `
+        <article class="card post-card"
+          data-post-id="${safe(post.id)}">
+
+          <div class="row">
+            ${avatar}
+            <div>
+              <strong>${safe(name)}</strong><br>
+              <small class="muted">
+                ${safe(new Date(post.created_at).toLocaleString())}
+              </small>
+            </div>
+          </div>
+
+          <p class="post-content">${safe(post.content || "")}</p>
+
+          ${photo}
+
+          <p class="like-count">
+            ❤️ <strong>${count}</strong>
+            ${count === 1 ? "Like" : "Likes"}
+          </p>
+
+          <div class="post-actions">
+            <button type="button"
+              data-action="like"
+              data-id="${safe(post.id)}">
+              ${isLiked ? "❤️ Liked" : "♡ Like"} (${count})
+            </button>
+
+            <button type="button"
+              data-action="comment"
+              data-id="${safe(post.id)}">
+              💬 Comment
+            </button>
+
+            <button type="button"
+              data-action="share"
+              data-id="${safe(post.id)}">
+              🔗 Share
+            </button>
+          </div>
+
+          <div class="comment-area"
+            id="comments-${safe(post.id)}"></div>
+        </article>
+      `;
+    }).join("");
 
   } catch (error) {
-    console.error("Zentro publish error:", error);
-    alert(error.message || "Could not publish your post.");
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Publish Post";
-    }
+    console.error("Zentro feed error:", error);
+
+    feed.innerHTML =
+      '<div class="card">Could not load posts or likes. Please refresh and try again.</div>';
   }
-}
+  }
 
 /* END PHOTO POST REPAIR PART 2 */
 startZentro();

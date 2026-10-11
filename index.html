@@ -2075,7 +2075,162 @@ async function startZentro() {
     );
   }
 }
+/* ZENTRO REPAIR - PART 1 */
 
+async function repairZentroFeed() {
+  const feed = document.getElementById("feedList");
+  if (!feed) return;
+
+  feed.textContent = "Loading posts...";
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("posts")
+      .select("id, user_id, content, image_url, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+
+    feed.replaceChildren();
+
+    if (!data || data.length === 0) {
+      feed.textContent = "No posts yet. Be the first to share!";
+      return;
+    }
+
+    data.forEach(post => {
+      const card = document.createElement("article");
+      card.className = "card";
+
+      const content = document.createElement("p");
+      content.textContent = post.content || "";
+      card.appendChild(content);
+
+      if (post.image_url) {
+        const img = document.createElement("img");
+        img.src = post.image_url;
+        img.alt = "Post image";
+        img.style.maxWidth = "100%";
+        card.appendChild(img);
+      }
+
+      const date = document.createElement("small");
+      date.textContent =
+        new Date(post.created_at).toLocaleString();
+      card.appendChild(date);
+
+      feed.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Zentro feed error:", error);
+    feed.textContent =
+      "Could not load posts. Please try again.";
+  }
+}
+
+/* END PART 1 *//* ZENTRO REPAIR - PART 2 */
+
+async function repairZentroPublish(event) {
+  event.preventDefault();
+
+  const input = document.getElementById("postText");
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  const content = input ? input.value.trim() : "";
+
+  if (!content) {
+    alert("Please write something before publishing.");
+    return;
+  }
+
+  if (button) button.disabled = true;
+
+  try {
+    const { data: sessionData, error: sessionError } =
+      await supabaseClient.auth.getUser();
+
+    if (sessionError) throw sessionError;
+
+    const user = sessionData.user;
+
+    if (!user) {
+      alert("Please log in before publishing.");
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from("posts")
+      .insert({
+        user_id: user.id,
+        content: content,
+        image_url: null
+      });
+
+    if (error) throw error;
+
+    input.value = "";
+    await repairZentroFeed();
+
+    alert("Your post has been published!");
+  } catch (error) {
+    console.error("Zentro publish error:", error);
+    alert("Post failed: " + error.message);
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+/* END PART 2 *//* ZENTRO REPAIR - PART 3 */
+
+// Connect the Publish Post form
+const zentroPostForm =
+  document.getElementById("createPostForm");
+
+if (zentroPostForm) {
+  zentroPostForm.addEventListener(
+    "submit",
+    repairZentroPublish
+  );
+}
+
+// Connect bottom navigation buttons
+document.querySelectorAll(".nav-btn[data-page]")
+  .forEach(button => {
+    button.addEventListener("click", () => {
+      const pageName = button.dataset.page;
+      const targetPage =
+        document.getElementById("page-" + pageName);
+
+      if (!targetPage) {
+        alert("This page is not available yet: " + pageName);
+        return;
+      }
+
+      document.querySelectorAll(".page")
+        .forEach(page => {
+          page.classList.remove("active");
+        });
+
+      targetPage.classList.add("active");
+
+      document.querySelectorAll(".nav-btn")
+        .forEach(navButton => {
+          navButton.classList.toggle(
+            "active",
+            navButton.dataset.page === pageName
+          );
+        });
+
+      window.scrollTo(0, 0);
+
+      if (pageName === "home") {
+        repairZentroFeed();
+      }
+    });
+  });
+
+/* END PART 3 */
 startZentro();
 
 /* =========================================

@@ -873,122 +873,113 @@ a {
         </div>
       </section>
 
-      <!-- PROFILE -->  <section id="page-profile" class="page">
-    <h1 class="page-title">My Profile</h1>
+      <!-- PROFILE -->
+<section id="page-profile" class="page">
+  <h1 class="page-title">My Profile</h1>
 
-    <!-- Profile preview -->
-    <div class="card">
-      <div id="profileCover"
-        style="height:150px;background:var(--panel2);
-        border-radius:12px;margin-bottom:15px;
-        background-size:cover;background-position:center">
-      </div>
+  <!-- Cover photo with camera button -->
+  <div style="position:relative;margin-bottom:65px;">
 
-      <div class="row">
-        <img id="profileAvatar"
-          class="avatar large"
-          alt="Profile photo"
-          src="">
-
-        <div>
-          <h2 id="profileHeadingName">Zentro User</h2>
-          <p id="profileHeadingCity" class="muted">
-            Add your city
-          </p>
-        </div>
-      </div>
+    <div id="profileCover"
+      style="height:180px;background:var(--panel2);
+      border-radius:12px;background-size:cover;
+      background-position:center;">
     </div>
 
-    <!-- Profile photo uploads -->
-    <div class="card">
-      <h3>Profile Photos</h3>
-      <p class="muted">
-        Choose a profile photo and a cover photo for your Zentro account.
-      </p>
+    <button id="changeCoverPhotoBtn"
+      type="button"
+      aria-label="Change cover photo"
+      style="position:absolute;right:12px;bottom:12px;
+      width:42px;height:42px;border:0;
+      border-radius:50%;background:white;
+      font-size:21px;cursor:pointer;">
+      📷
+    </button>
 
-      <label for="profilePhotoInput">
-        Choose profile photo
-      </label>
-      <input
-        id="profilePhotoInput"
-        type="file"
-        accept="image/*">
+    <!-- Circular profile photo -->
+    <div style="position:absolute;left:18px;bottom:-48px;
+      width:100px;height:100px;">
 
-      <label for="coverPhotoInput">
-        Choose cover photo
-      </label>
-      <input
-        id="coverPhotoInput"
-        type="file"
-        accept="image/*">
+      <img id="profileAvatar"
+        class="avatar large"
+        alt="Profile photo"
+        src=""
+        style="width:100px;height:100px;
+        object-fit:cover;border:4px solid white;">
 
-      <button
-        id="saveProfilePhotosBtn"
-        class="primary"
-        type="button">
-        Save Photos
+      <button id="changeProfilePhotoBtn"
+        type="button"
+        aria-label="Change profile photo"
+        style="position:absolute;right:0;bottom:0;
+        width:38px;height:38px;border:2px solid white;
+        border-radius:50%;background:white;
+        font-size:19px;cursor:pointer;">
+        📷
       </button>
-
-      <p id="profilePhotoStatus"
-        class="muted"
-        role="status"
-        aria-live="polite"></p>
     </div>
+  </div>
 
-    <!-- Edit profile details -->
-    <div class="card">
-      <h3>Edit your profile</h3>
+  <!-- Hidden photo selectors -->
+  <input id="profilePhotoInput"
+    type="file" accept="image/*" style="display:none;">
 
-      <form id="profileForm">
-        <label for="profileUsername">Username</label>
-        <input id="profileUsername"
-          type="text"
-          maxlength="30"
-          required>
+  <input id="coverPhotoInput"
+    type="file" accept="image/*" style="display:none;">
 
-        <label for="profileDisplayName">Display name</label>
-        <input id="profileDisplayName"
-          type="text"
-          maxlength="80"
-          required>
+  <!-- Existing upload function uses this button -->
+  <button id="saveProfilePhotosBtn"
+    type="button" style="display:none;">
+    Save Photos
+  </button>
 
-        <label for="profileCity">City</label>
-        <input id="profileCity"
-          type="text"
-          maxlength="100">
+  <p id="profilePhotoStatus"
+    class="muted" role="status" aria-live="polite"></p>
 
-        <label for="profileBirthDate">Date of birth</label>
-        <input id="profileBirthDate"
-          type="date">
+  <div class="card">
+    <h2 id="profileHeadingName">Zentro User</h2>
+    <p id="profileHeadingCity" class="muted">Add your city</p>
+  </div>
 
-        <label for="profileGender">Gender</label>
-        <select id="profileGender">
-          <option value="">Prefer not to say</option>
-          <option value="Woman">Woman</option>
-          <option value="Man">Man</option>
-          <option value="Other">Other</option>
-        </select>
+  <!-- Edit profile details -->
+  <div class="card">
+    <h3>Edit your profile</h3>
 
-        <label for="profileBio">Bio</label>
-        <textarea id="profileBio"
-          maxlength="300"
-          placeholder="Tell people about yourself"></textarea>
+    <form id="profileForm">
+      <label for="profileUsername">Username</label>
+      <input id="profileUsername" type="text"
+        maxlength="30" required>
 
-        <label for="profileAvatarUrl">Profile photo URL</label>
-        <input id="profileAvatarUrl"
-          type="url"
-          placeholder="https://...">
+      <label for="profileDisplayName">Display name</label>
+      <input id="profileDisplayName" type="text"
+        maxlength="80" required>
 
-        <label for="profileCoverUrl">Cover photo URL</label>
-        <input id="profileCoverUrl"
-          type="url"
-          placeholder="https://...">
+      <label for="profileCity">City</label>
+      <input id="profileCity" type="text" maxlength="100">
 
-        <button class="primary" type="submit">
-          Save Profile
-        </button>
-      </form>
-    </div>
+      <label for="profileBirthDate">Date of birth</label>
+      <input id="profileBirthDate" type="date">
+
+      <label for="profileGender">Gender</label>
+      <select id="profileGender">
+        <option value="">Prefer not to say</option>
+        <option value="Woman">Woman</option>
+        <option value="Man">Man</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <label for="profileBio">Bio</label>
+      <textarea id="profileBio"
+        maxlength="300"
+        placeholder="Tell people about yourself"></textarea>
+
+      <button class="primary" type="submit">
+        Save Profile
+      </button>
+    </form>
+  </div>
+  </section>
+      })();
+      
       </section>
 
       <!-- SETTINGS -->
@@ -2774,6 +2765,47 @@ async function uploadZentroProfilePhotos() {
       uploadZentroProfilePhotos();
     });
   }
+})();
+  /* CONNECT ZENTRO PROFILE CAMERAS */
+
+(function () {
+  const profileInput = document.getElementById("profilePhotoInput");
+  const coverInput = document.getElementById("coverPhotoInput");
+
+  const profileCamera = document.getElementById("changeProfilePhotoBtn");
+  const coverCamera = document.getElementById("changeCoverPhotoBtn");
+  const saveButton = document.getElementById("saveProfilePhotosBtn");
+
+  if (!profileInput || !coverInput || !saveButton) {
+    console.error("Zentro photo controls are missing.");
+    return;
+  }
+
+  if (profileCamera) {
+    profileCamera.addEventListener("click", function () {
+      profileInput.click();
+    });
+  }
+
+  if (coverCamera) {
+    coverCamera.addEventListener("click", function () {
+      coverInput.click();
+    });
+  }
+
+  profileInput.addEventListener("change", function () {
+    if (profileInput.files.length) {
+      coverInput.value = "";
+      saveButton.click();
+    }
+  });
+
+  coverInput.addEventListener("change", function () {
+    if (coverInput.files.length) {
+      profileInput.value = "";
+      saveButton.click();
+    }
+  });
 })();
 </script>
 </body>

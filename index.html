@@ -1346,72 +1346,157 @@ async function saveMyProfile(profileData) {
 
 async function loadFeed() {
   const feed = $("feedList");
-  if (!feed) return;
+
+  if (!feed) {
+    console.error("Zentro: feedList element not found.");
+    return;
+  }
 
   feed.innerHTML = "<p>Loading posts...</p>";
 
-  const { data, error } = await supabaseClient
-    .from("posts")
-    .select(`
-      id,
-      user_id,
-      content,
-      image_url,
-      created_at,
-      profiles (
-        username,
-        display_name,
-        avatar_url
+  try {
+    // STEP 1: Load posts from Supabase.
+    const { data: posts, error: postsError } = await supabaseClient
+      .from("posts")
+      .select("id, user_id, content, image_url, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (postsError) {
+      console.error("Zentro feed loading failed:", postsError);
+
+      feed.innerHTML =
+        "<p>Could not load posts. Please refresh and try again.</p>";
+
+      return;
+    }
+
+    if (!posts || posts.length === 0) {
+      feed.innerHTML =
+        "<p>No posts yet. Be the first to share something!</p>";
+
+      return;
+    }
+
+    // STEP 2: Find the authors of these posts.
+    const userIds = [
+      ...new Set(
+        posts.map(post => post.user_id).filter(Boolean)
       )
-    `)
-    .order("created_at", { ascending: false })
-    .limit(50);
+    ];
 
-  if (error) {
-    console.error("Feed loading failed:", error);
-    feed.innerHTML = "<p>Could not load posts. Please try again.</p>";
-    return;
-  }
+    // STEP 3: Load profile information separately.
+    let profiles = [];
 
-  if (!data || data.length === 0) {
-    feed.innerHTML = "<p>No posts yet. Be the first to share something!</p>";
-    return;
-  }
+    if (userIds.length > 0) {
+      const { data: profileData, error: profileError } =
+        await supabaseClient
+          .from("profiles")
+          .select("id, username, display_name, avatar_url")
+          .in("id", userIds);
 
-  feed.innerHTML = data.map(post => {
-    const profile = post.profiles || {};
-    const name = profile.display_name || profile.username || "Zentro User";
-    const avatar = profile.avatar_url
-      ? `<img class="post-avatar" src="${escapeHTML(profile.avatar_url)}" alt="">`
-      : `<div class="post-avatar avatar-fallback">${escapeHTML(getInitials(name))}</div>`;
+      if (profileError) {
+        console.error(
+          "Zentro profile loading failed:",
+          profileError
+        );
+      } else {
+        profiles = profileData || [];
+      }
+    }
 
-    const postImage = post.image_url
-      ? `<img class="post-image" src="${escapeHTML(post.image_url)}" alt="Post image">`
-      : "";
+    // STEP 4: Match each post with its author's profile.
+    const profileMap = new Map(
+      profiles.map(profile => [profile.id, profile])
+    );
 
-    return `
-      <article class="post-card" data-post-id="${escapeHTML(post.id)}">
-        <div class="post-header">
-          ${avatar}
-          <div>
-            <strong>${escapeHTML(name)}</strong>
-            <small>${escapeHTML(formatDate(post.created_at))}</small>
+    // STEP 5: Display the posts in the feed.
+    feed.innerHTML = posts.map(post => {
+      const profile = profileMap.get(post.user_id) || {};
+
+      const name =
+        profile.display_name ||
+        profile.username ||
+        "Zentro User";
+
+      const avatar = profile.avatar_url
+        ? `<img
+             class="post-avatar"
+             src="${escapeHTML(profile.avatar_url)}"
+             alt=""
+           >`
+        : `<div class="post-avatar avatar-fallback">
+             ${escapeHTML(getInitials(name))}
+           </div>`;
+
+      const postImage = post.image_url
+        ? `<img
+             class="post-image"
+             src="${escapeHTML(post.image_url)}"
+             alt="Post image"
+           >`
+        : "";
+
+      return `
+        <article
+          class="post-card"
+          data-post-id="${escapeHTML(post.id)}"
+        >
+          <div class="post-header">
+            ${avatar}
+
+            <div>
+              <strong>${escapeHTML(name)}</strong>
+              <small>${escapeHTML(formatDate(post.created_at))}</small>
+            </div>
           </div>
-        </div>
-        <p class="post-content">${escapeHTML(post.content || "")}</p>
-        ${postImage}
-        <div class="post-actions">
-          <button type="button" data-action="like"
-            data-id="${escapeHTML(post.id)}">♡ Like</button>
-          <button type="button" data-action="comment"
-            data-id="${escapeHTML(post.id)}">Comment</button>
-          <button type="button" data-action="share"
-            data-id="${escapeHTML(post.id)}">Share</button>
-        </div>
-        <div class="comment-area" id="comments-${escapeHTML(post.id)}"></div>
-      </article>
-    `;
-  }).join("");
+
+          <p class="post-content">
+            ${escapeHTML(post.content || "")}
+          </p>
+
+          ${postImage}
+
+          <div class="post-actions">
+            <button
+              type="button"
+              data-action="like"
+              data-id="${escapeHTML(post.id)}"
+            >♡ Like</button>
+
+            <button
+              type="button"
+              data-action="comment"
+              data-id="${escapeHTML(post.id)}"
+            >Comment</button>
+
+            <button
+              type="button"
+              data-action="share"
+              data-id="${escapeHTML(post.id)}"
+            >Share</button>
+          </div>
+
+          <div
+            class="comment-area"
+            id="comments-${escapeHTML(post.id)}"
+          ></div>
+        </article>
+      `;
+    }).join("");
+
+    console.log(
+      "Zentro feed loaded successfully:",
+      posts.length,
+      "posts"
+    );
+
+  } catch (error) {
+    console.error("Unexpected Zentro feed error:", error);
+
+    feed.innerHTML =
+      "<p>Something went wrong while loading posts. Please try again.</p>";
+  }
 }
 
 /* =========================================

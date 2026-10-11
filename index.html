@@ -1355,35 +1355,37 @@ async function loadMyProfile() {
 ========================================= */
 
 async function saveMyProfile(profileData) {
-  if (!currentUser) {
-    throw new Error("Please log in first.");
-  }
-
-  const updates = {
-    id: currentUser.id,
-    username: profileData.username,
-    display_name: profileData.display_name,
-    bio: profileData.bio || "",
-    city: profileData.city || "",
-    birth_date: profileData.birth_date || null,
-    gender: profileData.gender || "",
-    updated_at: new Date().toISOString()
-  };
-
-  const { data, error } = await supabaseClient
-    .from("profiles")
-    .upsert(updates, { onConflict: "id" })
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Saving profile failed:", error);
-    throw error;
-  }
-
-  currentProfile = data;
-  return data;
+if (!currentUser) {
+throw new Error("Please log in first.");
 }
+
+const updates = {
+id: currentUser.id,
+username: profileData.username,
+display_name: profileData.display_name,
+bio: profileData.bio || "",
+city: profileData.city || "",
+birth_date: profileData.birth_date || null,
+gender: profileData.gender || "",
+avatar_url: profileData.avatar_url || null,
+cover_url: profileData.cover_url || null,
+updated_at: new Date().toISOString()
+};
+
+const { data, error } = await supabaseClient
+.from("profiles")
+.upsert(updates, { onConflict: "id" })
+.select()
+.single();
+
+if (error) {
+console.error("Saving profile failed:", error);
+throw error;
+}
+
+currentProfile = data;
+return data;
+    }
 
 /* =========================================
    7. LOAD HOME FEED

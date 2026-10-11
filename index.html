@@ -873,77 +873,122 @@ a {
         </div>
       </section>
 
-      <!-- PROFILE -->
-      <section id="page-profile" class="page">
-        <h1 class="page-title">My Profile</h1>
+      <!-- PROFILE -->  <section id="page-profile" class="page">
+    <h1 class="page-title">My Profile</h1>
 
-        <div class="card">
-          <div id="profileCover"
-            style="height:150px;background:var(--panel2);
-            border-radius:12px;margin-bottom:15px;
-            background-size:cover;background-position:center">
-          </div>
+    <!-- Profile preview -->
+    <div class="card">
+      <div id="profileCover"
+        style="height:150px;background:var(--panel2);
+        border-radius:12px;margin-bottom:15px;
+        background-size:cover;background-position:center">
+      </div>
 
-          <div class="row">
-            <img id="profileAvatar"
-              class="avatar large"
-              alt="Profile photo"
-              src="">
+      <div class="row">
+        <img id="profileAvatar"
+          class="avatar large"
+          alt="Profile photo"
+          src="">
 
-            <div>
-              <h2 id="profileHeadingName">Zentro User</h2>
-              <p id="profileHeadingCity" class="muted">
-                Add your city
-              </p>
-            </div>
-          </div>
+        <div>
+          <h2 id="profileHeadingName">Zentro User</h2>
+          <p id="profileHeadingCity" class="muted">
+            Add your city
+          </p>
         </div>
+      </div>
+    </div>
 
-        <div class="card">
-          <h3>Edit your profile</h3>
+    <!-- Profile photo uploads -->
+    <div class="card">
+      <h3>Profile Photos</h3>
+      <p class="muted">
+        Choose a profile photo and a cover photo for your Zentro account.
+      </p>
 
-          <form id="profileForm">
-            <label for="profileUsername">Username</label>
-            <input id="profileUsername"
-              type="text" maxlength="30" required>
+      <label for="profilePhotoInput">
+        Choose profile photo
+      </label>
+      <input
+        id="profilePhotoInput"
+        type="file"
+        accept="image/*">
 
-            <label for="profileDisplayName">Display name</label>
-            <input id="profileDisplayName"
-              type="text" maxlength="80" required>
+      <label for="coverPhotoInput">
+        Choose cover photo
+      </label>
+      <input
+        id="coverPhotoInput"
+        type="file"
+        accept="image/*">
 
-            <label for="profileCity">City</label>
-            <input id="profileCity"
-              type="text" maxlength="100">
+      <button
+        id="saveProfilePhotosBtn"
+        class="primary"
+        type="button">
+        Save Photos
+      </button>
 
-            <label for="profileBirthDate">Date of birth</label>
-            <input id="profileBirthDate" type="date">
+      <p id="profilePhotoStatus"
+        class="muted"
+        role="status"
+        aria-live="polite"></p>
+    </div>
 
-            <label for="profileGender">Gender</label>
-            <select id="profileGender">
-              <option value="">Prefer not to say</option>
-              <option value="Woman">Woman</option>
-              <option value="Man">Man</option>
-              <option value="Other">Other</option>
-            </select>
+    <!-- Edit profile details -->
+    <div class="card">
+      <h3>Edit your profile</h3>
 
-            <label for="profileBio">Bio</label>
-            <textarea id="profileBio"
-              maxlength="300"
-              placeholder="Tell people about yourself"></textarea>
+      <form id="profileForm">
+        <label for="profileUsername">Username</label>
+        <input id="profileUsername"
+          type="text"
+          maxlength="30"
+          required>
 
-            <label for="profileAvatarUrl">Profile photo URL</label>
-            <input id="profileAvatarUrl"
-              type="url" placeholder="https://...">
+        <label for="profileDisplayName">Display name</label>
+        <input id="profileDisplayName"
+          type="text"
+          maxlength="80"
+          required>
 
-            <label for="profileCoverUrl">Cover photo URL</label>
-            <input id="profileCoverUrl"
-              type="url" placeholder="https://...">
+        <label for="profileCity">City</label>
+        <input id="profileCity"
+          type="text"
+          maxlength="100">
 
-            <button class="primary" type="submit">
-              Save Profile
-            </button>
-          </form>
-        </div>
+        <label for="profileBirthDate">Date of birth</label>
+        <input id="profileBirthDate"
+          type="date">
+
+        <label for="profileGender">Gender</label>
+        <select id="profileGender">
+          <option value="">Prefer not to say</option>
+          <option value="Woman">Woman</option>
+          <option value="Man">Man</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <label for="profileBio">Bio</label>
+        <textarea id="profileBio"
+          maxlength="300"
+          placeholder="Tell people about yourself"></textarea>
+
+        <label for="profileAvatarUrl">Profile photo URL</label>
+        <input id="profileAvatarUrl"
+          type="url"
+          placeholder="https://...">
+
+        <label for="profileCoverUrl">Cover photo URL</label>
+        <input id="profileCoverUrl"
+          type="url"
+          placeholder="https://...">
+
+        <button class="primary" type="submit">
+          Save Profile
+        </button>
+      </form>
+    </div>
       </section>
 
       <!-- SETTINGS -->

@@ -1555,51 +1555,65 @@ if ($("createPostBtn")) {
    9. LIKE A POST
 ========================================= */
 
-async function togglePostLike(postId) {
+  async function togglePostLike(postId) {
   if (!currentUser) {
     showPageMessage("Please log in to like posts.", "error");
     return;
   }
 
-  const { data: existing, error: lookupError } =
-    await supabaseClient
-      .from("post_likes")
-      .select("post_id")
-      .eq("post_id", postId)
-      .eq("user_id", currentUser.id)
-      .maybeSingle();
+  try {
+    // Check whether the current user already liked this post.
+    const { data: existing, error: lookupError } =
+      await supabaseClient
+        .from("post_likes")
+        .select("post_id")
+        .eq("post_id", postId)
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
 
-  if (lookupError) {
-    console.error(lookupError);
-    showPageMessage("Could not check your like.", "error");
-    return;
+    if (lookupError) throw lookupError;
+
+    // Remove the like or create a new one.
+    if (existing) {
+      const { error } = await supabaseClient
+        .from("post_likes")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", currentUser.id);
+
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient
+        .from("post_likes")
+        .insert({
+          post_id: postId,
+          user_id: currentUser.id
+        });
+
+      if (error) throw error;
+    }
+
+    // Refresh the feed to update the like count.
+    if (typeof repairZentroFeed === "function") {
+      await repairZentroFeed();
+    } else if (typeof loadFeed === "function") {
+      await loadFeed();
+    }
+
+    showPageMessage(
+      existing ? "Like removed." : "You liked this post.",
+      "success"
+    );
+
+  } catch (error) {
+    console.error("Zentro Like error:", error);
+
+    showPageMessage(
+      error.message || "Could not update your like.",
+      "error"
+    );
   }
-
-  let result;
-
-  if (existing) {
-    result = await supabaseClient
-      .from("post_likes")
-      .delete()
-      .eq("post_id", postId)
-      .eq("user_id", currentUser.id);
-  } else {
-    result = await supabaseClient
-      .from("post_likes")
-      .insert({
-        post_id: postId,
-        user_id: currentUser.id
-      });
-  }
-
-  if (result.error) {
-    console.error(result.error);
-    showPageMessage("Could not update your like.", "error");
-    return;
-  }
-
-  showPageMessage(existing ? "Like removed." : "You liked this post.", "success");
-}
+        }
 
 /* =========================================
    10. POST BUTTON HANDLER

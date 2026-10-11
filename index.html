@@ -2550,6 +2550,231 @@ setTimeout(function () {
 /* =========================================
    END OF ZENTRO APPLICATION LOGIC
 ========================================= */
+/* ==========================================
+   ZENTRO PROFILE AND COVER PHOTO UPLOADS
+========================================== */
+
+async function uploadZentroProfilePhotos() {
+  const profileInput = document.getElementById("profilePhotoInput");
+  const coverInput = document.getElementById("coverPhotoInput");
+  const status = document.getElementById("profilePhotoStatus");
+  const button = document.getElementById("saveProfilePhotosBtn");
+
+  if (typeof supabaseClient === "undefined" || typeof currentUser === "undefined" || !currentUser) {
+    if (status) {
+      status.textContent = "Please log in before uploading photos.";
+    }
+    return;
+  }
+
+  const profileFile = profileInput?.files?.[0];
+  const coverFile = coverInput?.files?.[0];
+
+  if (!profileFile && !coverFile) {
+    if (status) {
+      status.textContent = "Please choose a profile photo or cover photo first.";
+    }
+    return;
+  }
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif"
+  ];
+
+  for (const file of [profileFile, coverFile].filter(Boolean)) {
+    if (!allowedTypes.includes(file.type)) {
+      if (status) {
+        status.textContent = "Choose a JPG, PNG, WEBP, or GIF image.";
+      }
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      if (status) {
+        status.textContent = "Each image must be 5 MB or smaller.";
+      }
+      return;
+    }
+  }
+    if (button) button.disabled = true;
+
+  if (status) {
+    status.textContent = "Uploading your photos...";
+  }
+
+  try {
+    const userId = currentUser.id;
+
+    const existingProfile =
+      typeof currentProfile !== "undefined" && currentProfile
+        ? currentProfile
+        : {};
+
+    const updates = {};
+
+    async function uploadOne(file, prefix) {
+      const extension = file.name.split(".").pop().toLowerCase();
+
+      const safeExtension = /^[a-z0-9]+$/.test(extension)
+        ? extension
+        : "jpg";
+
+      const filePath =
+        userId + "/" + prefix + "-" + Date.now() + "." + safeExtension;
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from("profile-photos")
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabaseClient.storage
+        .from("profile-photos")
+        .getPublicUrl(filePath);
+
+      if (!data || !data.publicUrl) {
+        throw new Error("Could not get the uploaded photo URL.");
+      }
+
+      return data.publicUrl;
+    }
+
+    if (profileFile) {
+      updates.avatar_url = await uploadOne(profileFile, "avatar");
+    }
+
+    if (coverFile) {
+      updates.cover_url = await uploadOne(coverFile, "cover");
+          }
+        const username =
+      document.getElementById("profileUsername")?.value.trim() ||
+      existingProfile.username ||
+      currentUser.user_metadata?.username ||
+      currentUser.email?.split("@")[0] ||
+      "user";
+
+    const displayName =
+      document.getElementById("profileDisplayName")?.value.trim() ||
+      existingProfile.display_name ||
+      username;
+
+    const cityInput = document.getElementById("profileCity");
+    const birthDateInput = document.getElementById("profileBirthDate");
+    const genderInput = document.getElementById("profileGender");
+    const bioInput = document.getElementById("profileBio");
+
+    const profileToSave = {
+      id: userId,
+      username: username,
+      display_name: displayName,
+
+      city: cityInput
+        ? cityInput.value.trim()
+        : (existingProfile.city || ""),
+
+      birth_date: birthDateInput
+        ? (birthDateInput.value || null)
+        : (existingProfile.birth_date || null),
+
+      gender: genderInput
+        ? genderInput.value
+        : (existingProfile.gender || ""),
+
+      bio: bioInput
+        ? bioInput.value.trim()
+        : (existingProfile.bio || ""),
+
+      avatar_url:
+        updates.avatar_url !== undefined
+          ? updates.avatar_url
+          : (existingProfile.avatar_url || null),
+
+      cover_url:
+        updates.cover_url !== undefined
+          ? updates.cover_url
+          : (existingProfile.cover_url || null),
+
+      updated_at: new Date().toISOString()
+    };
+        const { data: savedProfile, error: saveError } =
+      await supabaseClient
+        .from("profiles")
+        .upsert(profileToSave, { onConflict: "id" })
+        .select()
+        .single();
+
+    if (saveError) {
+      throw saveError;
+    }
+
+    const avatar = document.getElementById("profileAvatar");
+    const cover = document.getElementById("profileCover");
+    const avatarUrlInput = document.getElementById("profileAvatarUrl");
+    const coverUrlInput = document.getElementById("profileCoverUrl");
+
+    if (avatar && savedProfile.avatar_url) {
+      avatar.src = savedProfile.avatar_url;
+    }
+
+    if (cover && savedProfile.cover_url) {
+      cover.style.backgroundImage =
+        'url("' + savedProfile.cover_url + '")';
+    }
+
+    if (avatarUrlInput) {
+      avatarUrlInput.value = savedProfile.avatar_url || "";
+    }
+
+    if (coverUrlInput) {
+      coverUrlInput.value = savedProfile.cover_url || "";
+    }
+
+    const headingName = document.getElementById("profileHeadingName");
+    const headingCity = document.getElementById("profileHeadingCity");
+
+    if (headingName) {
+      headingName.textContent = savedProfile.display_name || username;
+    }
+
+    if (headingCity) {
+      headingCity.textContent = savedProfile.city || "Add your city";
+    }
+
+    if (status) {
+      status.textContent = "Success! Your photos have been saved.";
+}
+      } catch (error) {
+    console.error("Zentro photo upload failed:", error);
+
+    if (status) {
+      status.textContent =
+        "Upload failed: " + (error.message || "Please try again.");
+    }
+
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+(function connectZentroPhotoUpload() {
+  const button = document.getElementById("saveProfilePhotosBtn");
+
+  if (button && button.dataset.uploadConnected !== "true") {
+    button.dataset.uploadConnected = "true";
+
+    button.addEventListener("click", function () {
+      uploadZentroProfilePhotos();
+    });
+  }
+})();
 </script>
 </body>
 </html>

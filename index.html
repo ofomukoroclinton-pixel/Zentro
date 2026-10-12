@@ -2410,6 +2410,9 @@ document.querySelectorAll(".nav-btn[data-page]")
   .forEach(button => {
     button.addEventListener("click", () => {
       const pageName = button.dataset.page;
+      
+      localStorage.setItem("zentroLastPage", pageName);
+    
       const targetPage =
         document.getElementById("page-" + pageName);
 

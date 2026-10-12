@@ -1762,11 +1762,12 @@ async function loadComments(postId) {
     <div class="comment-list">Loading comments...</div>
   `;
 
-  const { data, error } = await supabaseClient
+    const { data, error } = await supabaseClient
     .from("comments")
     .select(`
-      id, content, created_at, user_id,
-profiles (display_name, username)
+      id, content, created_at, user_id, parent_comment_id,
+      profiles (display_name, username),
+      comment_likes (id, user_id)
     `)
     .eq("post_id", postId)
     .order("created_at", { ascending: true });

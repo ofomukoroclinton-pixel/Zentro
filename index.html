@@ -3150,8 +3150,15 @@ actions.style.cssText =
   viewButton.className = "primary";
 
   viewButton.onclick = function () {
-    alert("Profile viewing will be connected in Part 5.");
-  };
+const details = [
+"Name: " + name,
+"Username: " + (profile.username || "Not provided"),
+"Bio: " + (profile.bio || "No bio added yet."),
+"City: " + (profile.city || "Not provided")
+];
+
+alert(details.join("\n\n"));
+};
 
   const messageButton = document.createElement("button");
   messageButton.type = "button";
@@ -3166,6 +3173,31 @@ actions.style.cssText =
   
 /* ===== END PART 1 ===== */
 /* END ZENTRO SCROLL POSITION REPAIR */
+/* ===== ZENTRO PART 6: CONNECT DISCOVER ===== */
+
+function zentroCheckDiscoverPage() {
+const page = document.getElementById("page-discover");
+
+if (!page) return;
+
+if (getComputedStyle(page).display !== "none") {
+loadZentroDiscover();
+}
+}
+
+const zentroDiscoverPage =
+document.getElementById("page-discover");
+
+if (zentroDiscoverPage) {
+new MutationObserver(zentroCheckDiscoverPage).observe(
+zentroDiscoverPage,
+{ attributes: true, attributeFilter: ["class", "style"] }
+);
+}
+
+zentroCheckDiscoverPage();
+
+/* ===== END PART 6 ===== */
 </script>
 </body>
 </html>

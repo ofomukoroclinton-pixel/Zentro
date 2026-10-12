@@ -2961,6 +2961,26 @@ uploadZentroProfilePhotos = async function () {
 };
 
 /* END ZENTRO PROFILE PERSISTENCE REPAIR */
+/* ZENTRO SCROLL POSITION REPAIR */
+
+const zentroOriginalToggleLikeScrollFix = togglePostLike;
+
+togglePostLike = async function (postId) {
+  const savedScrollX = window.scrollX;
+  const savedScrollY = window.scrollY;
+
+  await zentroOriginalToggleLikeScrollFix(postId);
+
+  requestAnimationFrame(() => {
+    window.scrollTo({
+      left: savedScrollX,
+      top: savedScrollY,
+      behavior: "auto"
+    });
+  });
+};
+
+/* END ZENTRO SCROLL POSITION REPAIR */
 </script>
 </body>
 </html>

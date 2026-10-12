@@ -2805,6 +2805,162 @@ async function uploadZentroProfilePhotos() {
     }
   });
 })();
+  /* ZENTRO PROFILE PERSISTENCE REPAIR */
+
+function renderZentroProfile(profile) {
+  if (!profile) return;
+
+  currentProfile = profile;
+
+  const fields = {
+    profileUsername: profile.username || "",
+    profileDisplayName: profile.display_name || "",
+    profileCity: profile.city || "",
+    profileBirthDate: profile.birth_date || "",
+    profileGender: profile.gender || "",
+    profileBio: profile.bio || ""
+  };
+
+  Object.entries(fields).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.value = value;
+  });
+
+  const avatar = document.getElementById("profileAvatar");
+  if (avatar) {
+    if (profile.avatar_url) {
+      avatar.src = profile.avatar_url;
+      avatar.style.visibility = "visible";
+    } else {
+      avatar.removeAttribute("src");
+      avatar.style.visibility = "hidden";
+    }
+  }
+  const cover = document.getElementById("profileCover");
+  if (cover) {
+    cover.style.backgroundImage = profile.cover_url
+      ? 'url("' + profile.cover_url.replace(/"/g, '\\"') + '")'
+      : "none";
+  }
+
+  const headingName = document.getElementById("profileHeadingName");
+  if (headingName) {
+    headingName.textContent =
+      profile.display_name || profile.username || "Zentro User";
+  }
+
+  const headingCity = document.getElementById("profileHeadingCity");
+  if (headingCity) {
+    headingCity.textContent = profile.city || "Add your city";
+  }
+
+  const sidebarName = document.getElementById("sidebarUserName");
+  if (sidebarName) {
+    sidebarName.textContent =
+      profile.display_name || profile.username || "Zentro User";
+  }
+  const sidebarAvatar = document.getElementById("sidebarAvatar");
+  if (sidebarAvatar) {
+    if (profile.avatar_url) {
+      sidebarAvatar.textContent = "";
+      sidebarAvatar.style.backgroundImage =
+        'url("' + profile.avatar_url.replace(/"/g, '\\"') + '")';
+      sidebarAvatar.style.backgroundSize = "cover";
+      sidebarAvatar.style.backgroundPosition = "center";
+    } else {
+      sidebarAvatar.style.backgroundImage = "none";
+      sidebarAvatar.textContent =
+        (profile.display_name || profile.username || "Z")
+          .trim()
+          .split(/\s+/)
+          .slice(0, 2)
+          .map(word => word.charAt(0).toUpperCase())
+          .join("");
+    }
+  }
+}
+
+/* Display profile details whenever they are loaded */
+const zentroOriginalLoadMyProfile = loadMyProfile;
+
+loadMyProfile = async function () {
+  const profile = await zentroOriginalLoadMyProfile();
+
+  if (profile) {
+    renderZentroProfile(profile);
+  }
+
+  return profile;
+};
+  /* Make Save Profile actually save the user's details */
+const zentroProfileForm = document.getElementById("profileForm");
+
+if (
+  zentroProfileForm &&
+  zentroProfileForm.dataset.repairConnected !== "true"
+) {
+  zentroProfileForm.dataset.repairConnected = "true";
+
+  zentroProfileForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const button = zentroProfileForm.querySelector(
+      'button[type="submit"]'
+    );
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Saving...";
+    }
+
+    try {
+      const savedProfile = await saveMyProfile({
+        username:
+          document.getElementById("profileUsername").value.trim(),
+        display_name:
+          document.getElementById("profileDisplayName").value.trim(),
+        city:
+          document.getElementById("profileCity").value.trim(),
+        birth_date:
+          document.getElementById("profileBirthDate").value || null,
+        gender:
+          document.getElementById("profileGender").value,
+        bio:
+          document.getElementById("profileBio").value.trim(),
+        avatar_url: currentProfile?.avatar_url || null,
+        cover_url: currentProfile?.cover_url || null
+      });
+
+      renderZentroProfile(savedProfile);
+      showPageMessage("Your profile has been saved successfully.", "success");
+
+    } catch (error) {
+      console.error("Zentro profile save failed:", error);
+      showPageMessage(
+        "Could not save your profile: " + (error.message || "Please try again."),
+        "error"
+      );
+
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Save Profile";
+      }
+    }
+  });
+}
+  /* Refresh the displayed profile after a photo upload */
+const zentroOriginalPhotoUpload = uploadZentroProfilePhotos;
+
+uploadZentroProfilePhotos = async function () {
+  await zentroOriginalPhotoUpload();
+
+  if (currentUser) {
+    await loadMyProfile();
+  }
+};
+
+/* END ZENTRO PROFILE PERSISTENCE REPAIR */
 </script>
 </body>
 </html>

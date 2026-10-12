@@ -3059,6 +3059,112 @@ togglePostLike = async function (postId) {
   });
 };
 
+  /* ===== ZENTRO DISCOVER: PART 1 ===== */
+
+async function loadZentroDiscover() {
+const box = document.getElementById("discoverList");
+if (!box) return;
+
+if (!currentUser) {
+box.textContent = "Please log in first.";
+return;
+}
+
+box.textContent = "Loading Zentro members...";
+try {
+const { data: profiles, error } = await supabaseClient
+.from("profiles")
+.select("id, username, display_name, bio, city, avatar_uri")
+.neq("id", currentUser.id)
+.order("created_at", { ascending: false })
+.limit(50);
+
+if (error) throw error;
+
+if (!profiles || profiles.length === 0) {
+  box.textContent = "No other members found yet.";
+  return;
+}
+
+// Part 3 will display the profiles.
+
+} catch (error) {
+console.error("Zentro Discover error:", error);
+box.textContent = "Could not load members. Please try again.";
+  }
+}
+box.innerHTML = "";
+
+profiles.forEach(function (profile) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.style.marginBottom = "15px";
+
+  const name =
+    profile.display_name ||
+    profile.username ||
+    "Zentro User";
+
+  const photo = document.createElement("div");
+  photo.style.cssText =
+    "width:70px;height:70px;border-radius:50%;" +
+    "overflow:hidden;background:#202638;" +
+    "display:flex;align-items:center;" +
+    "justify-content:center;margin-bottom:10px;";
+
+  if (profile.avatar_uri) {
+    const img = document.createElement("img");
+    img.src = profile.avatar_uri;
+    img.alt = "Profile photo";
+    img.style.cssText =
+      "width:100%;height:100%;object-fit:cover;";
+    photo.appendChild(img);
+  } else {
+    photo.textContent = name.charAt(0).toUpperCase();
+  }
+
+  const heading = document.createElement("h3");
+  heading.textContent = name;
+
+  const username = document.createElement("p");
+  username.textContent = profile.username
+    ? "@" + profile.username
+    : "";
+
+  const bio = document.createElement("p");
+  bio.textContent = profile.bio || "No bio added yet.";
+
+  const city = document.createElement("p");
+  city.textContent = profile.city || "";
+
+  card.append(photo, heading, username, bio, city);
+  box.appendChild(card);
+});
+  const actions = document.createElement("div");
+actions.style.cssText =
+"display:flex;gap:8px;margin-top:12px;";
+
+  const viewButton = document.createElement("button");
+  viewButton.type = "button";
+  viewButton.textContent = "View Profile";
+  viewButton.className = "primary";
+
+  viewButton.onclick = function () {
+    alert("Profile viewing will be connected in Part 5.");
+  };
+
+  const messageButton = document.createElement("button");
+  messageButton.type = "button";
+  messageButton.textContent = "Message";
+
+  messageButton.onclick = function () {
+    alert("Messaging will be connected in Part 6.");
+  };
+
+  actions.append(viewButton, messageButton);
+  card.appendChild(actions);
+  
+/* ===== END PART 1 ===== */
 /* END ZENTRO SCROLL POSITION REPAIR */
 </script>
 </body>

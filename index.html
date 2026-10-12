@@ -1946,12 +1946,16 @@ document.addEventListener("click", async function (event) {
     await loadComments(postId);
 
     showPageMessage("Reply added successfully!", "success");
-  } catch (error) {
+    } catch (error) {
     console.error("Zentro reply error:", error);
-    showPageMessage("Could not add your reply.", "error");
+
+    showPageMessage(
+      "Reply failed: " + (error.message || "Unknown error"),
+      "error"
+    );
   } finally {
     button.disabled = false;
-  }
+    }
 });
 
 /* ===== END COMMENTS PART 4 ===== */

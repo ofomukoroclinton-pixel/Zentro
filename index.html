@@ -1846,7 +1846,62 @@ document.addEventListener("submit", async event => {
 
   await loadComments(postId);
 });
+/* ===== ZENTRO COMMENTS: PART 3 ===== */
 
+document.addEventListener("click", async event => {
+  const button = event.target.closest(".comment-like-btn");
+  if (!button) return;
+
+  if (!currentUser) {
+    showPageMessage("Please log in to like comments.", "error");
+    return;
+  }
+
+  const commentId = button.dataset.commentId;
+  if (!commentId) return;
+
+  button.disabled = true;
+
+  try {
+    const { data: existing, error: findError } =
+      await supabaseClient
+        .from("comment_likes")
+        .select("id")
+        .eq("comment_id", commentId)
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+    if (findError) throw findError;
+
+    if (existing) {
+      const { error } = await supabaseClient
+        .from("comment_likes")
+        .delete()
+        .eq("comment_id", commentId)
+        .eq("user_id", currentUser.id);
+
+      if (error) throw error;
+      button.textContent = "❤️ Like";
+    } else {
+      const { error } = await supabaseClient
+        .from("comment_likes")
+        .insert({
+          comment_id: commentId,
+          user_id: currentUser.id
+        });
+
+      if (error) throw error;
+      button.textContent = "❤️ Liked";
+    }
+  } catch (error) {
+    console.error("Comment like error:", error);
+    showPageMessage("Could not update comment like.", "error");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+/* ===== END COMMENTS PART 3 ===== */
 /* =========================================
    12. AUTHENTICATION HELPERS
 ========================================= */

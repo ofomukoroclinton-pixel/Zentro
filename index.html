@@ -2201,7 +2201,8 @@ async function startZentro() {
 
   } catch (error) {
     console.error("Zentro startup error:", error);
-
+    const authScreen = $("authScreen");
+if (authScreen) authScreen.classList.remove("hidden");
     showMessage(
       "authMessage",
       "Could not connect to Zentro. Check your internet connection.",

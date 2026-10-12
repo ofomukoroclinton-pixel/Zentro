@@ -1907,16 +1907,7 @@ document.addEventListener("click", async event => {
     if (countError) throw countError;
 
     button.textContent = "❤️ Like (" + (count || 0) + ")";
-      const { error } = await supabaseClient
-        .from("comment_likes")
-        .insert({
-          comment_id: commentId,
-          user_id: currentUser.id
-        });
-
-      if (error) throw error;
-      button.textContent = "❤️ Liked";
-    }
+      
   } catch (error) {
     console.error("Comment like error:", error);
     showPageMessage("Could not update comment like.", "error");

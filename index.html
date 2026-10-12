@@ -1922,9 +1922,18 @@ document.addEventListener("click", async function (event) {
   const item = button.closest(".comment-item");
   if (!item) return;
 
-  const commentId = item.dataset.commentId;
-  const postId = item.dataset.postId;
+    const commentId = item.dataset.commentId;
+  const postId =
+    item.dataset.postId ||
+    item.closest("[data-post-id]")?.dataset.postId;
 
+  if (!postId) {
+    showPageMessage(
+      "Cannot reply: the original post ID was not found.",
+      "error"
+    );
+    return;
+      }
   const reply = prompt("Write your reply:");
 
   if (!reply || !reply.trim()) return;

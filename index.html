@@ -1590,14 +1590,27 @@ if ($("createPostBtn")) {
    9. LIKE A POST
 ========================================= */
 
-  async function togglePostLike(postId) {
+  /* ZENTRO LIKE REPAIR — UPDATE WITHOUT RELOADING FEED */
+
+async function togglePostLike(postId) {
   if (!currentUser) {
     showPageMessage("Please log in to like posts.", "error");
     return;
   }
 
+  const postCard = Array.from(
+    document.querySelectorAll(".post-card")
+  ).find(card => card.dataset.postId === String(postId));
+
+  const likeButton = postCard
+    ? postCard.querySelector('[data-action="like"]')
+    : null;
+
+  if (likeButton && likeButton.disabled) return;
+
+  if (likeButton) likeButton.disabled = true;
+
   try {
-    // Check whether the current user already liked this post.
     const { data: existing, error: lookupError } =
       await supabaseClient
         .from("post_likes")
@@ -1608,7 +1621,6 @@ if ($("createPostBtn")) {
 
     if (lookupError) throw lookupError;
 
-    // Remove the like or create a new one.
     if (existing) {
       const { error } = await supabaseClient
         .from("post_likes")
@@ -1628,11 +1640,49 @@ if ($("createPostBtn")) {
       if (error) throw error;
     }
 
-    // Refresh the feed to update the like count.
-    if (typeof repairZentroFeed === "function") {
-      await repairZentroFeed();
-    } else if (typeof loadFeed === "function") {
-      await loadFeed();
+    /*
+      Update only this post's displayed count.
+      Do not reload or rebuild the feed.
+    */
+
+    if (postCard) {
+      const countElement = postCard.querySelector(
+        ".like-count strong"
+      );
+
+      const countLabel = postCard.querySelector(".like-count");
+
+      if (countElement) {
+        const oldCount = parseInt(
+          countElement.textContent,
+          10
+        ) || 0;
+
+        const newCount = Math.max(
+          0,
+          oldCount + (existing ? -1 : 1)
+        );
+
+        countElement.textContent = String(newCount);
+
+        if (countLabel) {
+          const textNode = Array.from(
+            countLabel.childNodes
+          ).find(node => node.nodeType === Node.TEXT_NODE);
+
+          if (textNode) {
+            textNode.nodeValue = newCount === 1
+              ? " ❤️ Like "
+              : " ❤️ Likes ";
+          }
+        }
+
+        if (likeButton) {
+          likeButton.textContent =
+            (existing ? "♡ Like" : "❤️ Liked") +
+            " (" + newCount + ")";
+        }
+      }
     }
 
     showPageMessage(
@@ -1647,9 +1697,13 @@ if ($("createPostBtn")) {
       error.message || "Could not update your like.",
       "error"
     );
-  }
-        }
 
+  } finally {
+    if (likeButton) likeButton.disabled = false;
+  }
+}
+
+/* END ZENTRO LIKE REPAIR */
 /* =========================================
    10. POST BUTTON HANDLER
 ========================================= */

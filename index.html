@@ -1790,12 +1790,26 @@ async function loadComments(postId) {
     const name = profile.display_name || profile.username || "User";
 
     return `
-      <div class="comment-item">
-        <strong>${escapeHTML(name)}</strong>
-        <p>${escapeHTML(comment.content)}</p>
-        <small>${escapeHTML(formatDate(comment.created_at))}</small>
-      </div>
-    `;
+<div class="comment-item" data-comment-id="${comment.id}">
+<strong>${escapeHTML(name)}</strong>
+<p>${escapeHTML(comment.content)}</p>
+<small>${escapeHTML(formatDate(comment.created_at))}</small>
+
+    <div class="comment-actions">
+      <button type="button"
+        class="comment-like-btn"
+        data-comment-id="${comment.id}">
+        ❤️ Like
+      </button>
+
+      <button type="button"
+        class="comment-reply-btn"
+        data-comment-id="${comment.id}">
+        💬 Reply
+      </button>
+    </div>
+  </div>
+`;
   }).join("");
 }
 

@@ -1804,10 +1804,10 @@ ${currentUser && comment.user_id === currentUser.id ? `
 ` : ""}
     <div class="comment-actions">
       <button type="button"
-        class="comment-like-btn"
-        data-comment-id="${comment.id}">
-        ❤️ Like
-      </button>
+  class="comment-like-btn"
+  data-comment-id="${comment.id}">
+  ❤️ Like (${(comment.comment_likes || []).length})
+</button>
 
       <button type="button"
         class="comment-reply-btn"

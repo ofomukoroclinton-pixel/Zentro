@@ -3198,6 +3198,245 @@ zentroDiscoverPage,
 zentroCheckDiscoverPage();
 
 /* ===== END PART 6 ===== */
+  /* ===== ZENTRO MESSAGING: PART 1 ===== */
+
+let zentroActiveChatUserId = null;
+let zentroActiveChatName = "";
+
+function openZentroConversation(userId, userName) {
+  if (!currentUser) {
+    alert("Please log in to send messages.");
+    return;
+  }
+
+  if (userId === currentUser.id) {
+    alert("You cannot message yourself.");
+    return;
+  }
+
+  zentroActiveChatUserId = userId;
+  zentroActiveChatName = userName || "Zentro User";
+
+  const title = document.getElementById("chatTitle");
+  const panel = document.getElementById("chatPanel");
+
+  if (title) {
+    title.textContent = zentroActiveChatName;
+  }
+
+  if (panel) {
+    panel.classList.remove("hidden");
+  }
+
+    loadZentroChatMessages();
+}
+async function loadZentroChatMessages() {
+const box = document.getElementById("chatMessages");
+
+if (!box || !currentUser || !zentroActiveChatUserId) return;
+
+box.textContent = "Loading messages...";
+
+try {
+const me = currentUser.id;
+const other = zentroActiveChatUserId;
+
+const { data, error } = await supabaseClient
+  .from("direct_messages")
+  .select("id, sender_id, receiver_id, content, created_at")
+  .or(
+    `and(sender_id.eq.${me},receiver_id.eq.${other}),and(sender_id.eq.${other},receiver_id.eq.${me})`
+  )
+  .order("created_at", { ascending: true })
+  .limit(100);
+
+if (error) throw error;
+
+box.replaceChildren();
+
+if (!data || data.length === 0) {
+  box.textContent = "No messages yet. Say hello!";
+  return;
+}
+
+data.forEach(function (message) {
+  const item = document.createElement("div");
+  item.className = "card";
+  item.style.margin = "8px 0";
+
+  const label = document.createElement("strong");
+  label.textContent =
+    message.sender_id === me ? "You" : zentroActiveChatName;
+
+  const content = document.createElement("p");
+  content.textContent = message.content;
+
+  item.append(label, content);
+  box.appendChild(item);
+});
+
+box.scrollTop = box.scrollHeight;
+
+} catch (error) {
+console.error("Zentro messages error:", error);
+box.textContent = "Could not load messages. Please try again.";
+}
+}
+  /* ===== ZENTRO MESSAGING: PART 3 ===== */
+
+const zentroSendForm = document.getElementById("sendMessageForm");
+
+if (zentroSendForm) {
+  zentroSendForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const input = document.getElementById("chatInput");
+    const sendButton = zentroSendForm.querySelector('button[type="submit"]');
+    const content = input ? input.value.trim() : "";
+
+    if (!currentUser || !zentroActiveChatUserId) {
+      alert("Please open a conversation first.");
+      return;
+    }
+
+    if (!content) {
+      alert("Please write a message first.");
+      return;
+    }
+
+    if (sendButton) sendButton.disabled = true;
+
+    try {
+      const { error } = await supabaseClient
+        .from("direct_messages")
+        .insert({
+          sender_id: currentUser.id,
+          receiver_id: zentroActiveChatUserId,
+          content: content
+        });
+
+      if (error) throw error;
+
+      input.value = "";
+      await loadZentroChatMessages();
+
+    } catch (error) {
+      console.error("Zentro send message error:", error);
+      alert("Message could not be sent. Please try again.");
+    } finally {
+      if (sendButton) sendButton.disabled = false;
+    }
+  });
+}
+/* ===== MESSAGING PART 4: CONVERSATIONS ===== */
+
+async function loadZentroMessageContacts() {
+const box = document.getElementById("messageContacts");
+if (!box || !currentUser) return;
+
+try {
+const me = currentUser.id;
+
+const { data, error } = await supabaseClient
+  .from("direct_messages")
+  .select("sender_id, receiver_id, created_at")
+  .or(`sender_id.eq.${me},receiver_id.eq.${me}`)
+  .order("created_at", { ascending: false });
+
+if (error) throw error;
+
+const ids = [...new Set((data || []).map(m =>
+  m.sender_id === me ? m.receiver_id : m.sender_id
+))];
+
+if (!ids.length) {
+  box.textContent = "No conversations yet.";
+  return;
+}
+
+const { data: people, error: profileError } =
+  await supabaseClient.from("profiles")
+    .select("id, username, display_name")
+    .in("id", ids);
+
+if (profileError) throw profileError;
+
+box.replaceChildren();
+
+(people || []).forEach(person => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent =
+    person.display_name || person.username || "Zentro User";
+  button.style.cssText =
+    "display:block;width:100%;margin:8px 0;padding:12px;";
+
+  button.onclick = () =>
+    openZentroConversation(
+      person.id,
+      person.display_name || person.username || "Zentro User"
+    );
+
+  box.appendChild(button);
+});
+
+} catch (error) {
+console.error("Zentro contacts error:", error);
+box.textContent = "Could not load conversations.";
+}
+}
+
+/* ===== END MESSAGING PART 4 ===== */
+/* ===== END MESSAGING PART 3 ===== */
+/* ===== END MESSAGING PART 1 ===== */
+/* ===== ZENTRO MESSAGING: PART 5 ===== */
+
+function zentroRefreshMessagesPage() {
+  const page = document.getElementById("page-messages");
+
+  if (
+    page &&
+    getComputedStyle(page).display !== "none" &&
+    currentUser
+  ) {
+    loadZentroMessageContacts();
+  }
+}
+
+const zentroMessagesPage =
+  document.getElementById("page-messages");
+
+if (zentroMessagesPage) {
+  new MutationObserver(zentroRefreshMessagesPage).observe(
+    zentroMessagesPage,
+    {
+      attributes: true,
+      attributeFilter: ["class", "style"]
+    }
+  );
+}
+
+zentroRefreshMessagesPage();
+
+/* ===== END MESSAGING PART 5 ===== */
+/* ===== ZENTRO MESSAGING: PART 6 ===== */
+
+if (!window.zentroChatRefreshTimer) {
+  window.zentroChatRefreshTimer = setInterval(function () {
+    const panel = document.getElementById("chatPanel");
+
+    if (
+      panel &&
+      !panel.classList.contains("hidden") &&
+      currentUser &&
+      zentroActiveChatUserId
+    ) {
+      loadZentroChatMessages();
+    }
+  }, 10000);
+}
+
+/* ===== END MESSAGING PART 6 ===== */
 </script>
 </body>
 </html>

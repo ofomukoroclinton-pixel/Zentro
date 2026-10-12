@@ -1880,7 +1880,7 @@ document.addEventListener("click", async event => {
 
     if (findError) throw findError;
 
-    if (existing) {
+        if (existing) {
       const { error } = await supabaseClient
         .from("comment_likes")
         .delete()
@@ -1888,8 +1888,25 @@ document.addEventListener("click", async event => {
         .eq("user_id", currentUser.id);
 
       if (error) throw error;
-      button.textContent = "❤️ Like";
     } else {
+      const { error } = await supabaseClient
+        .from("comment_likes")
+        .insert({
+          comment_id: commentId,
+          user_id: currentUser.id
+        });
+
+      if (error) throw error;
+    }
+
+    const { count, error: countError } = await supabaseClient
+      .from("comment_likes")
+      .select("id", { count: "exact", head: true })
+      .eq("comment_id", commentId);
+
+    if (countError) throw countError;
+
+    button.textContent = "❤️ Like (" + (count || 0) + ")";
       const { error } = await supabaseClient
         .from("comment_likes")
         .insert({

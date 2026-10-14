@@ -774,45 +774,60 @@ a {
         </div>
       </section>
 
-      <!-- DIRECT MESSAGES -->
-      <section id="page-messages" class="page">
-        <h1 class="page-title">Messages</h1>
-        <p class="muted">
-          Have private conversations with other users.
-        </p>
+      <!-- DIRECT MESSAGES -->  <section id="page-messages" class="page">
+    <h1 class="page-title">💬 Messages</h1>
+    <p class="muted">
+      Your private conversations with people on Zentro.
+    </p>
 
-        <div class="card">
-          <h3>Your conversations</h3>
-          <div id="messageContacts">
-            <div class="empty-state">
-              Your conversations will appear here.
-            </div>
-          </div>
+    <div class="card">
+      <h3>Your conversations</h3>
+
+      <div id="messageContacts">
+        <div class="empty-state">
+          Your conversations will appear here.
         </div>
+      </div>
+    </div>
 
-        <div id="chatPanel" class="card hidden">
-          <h3 id="chatTitle">Conversation</h3>
+    <div id="chatPanel" class="card hidden">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <button
+          type="button"
+          class="secondary"
+          onclick="document.getElementById('chatPanel').classList.add('hidden');document.getElementById('messageContacts').scrollIntoView({behavior:'smooth',block:'start'})">
+          ← Back
+        </button>
 
-          <div id="chatMessages"
-            style="min-height:180px;max-height:350px;overflow-y:auto">
-            <div class="empty-state">
-              Select a conversation to begin.
-            </div>
-          </div>
-
-          <form id="sendMessageForm">
-            <label for="chatInput">Your message</label>
-            <textarea id="chatInput"
-              placeholder="Write a message..."
-              maxlength="3000" required></textarea>
-
-            <button class="primary" type="submit">
-              Send Message
-            </button>
-          </form>
+        <div style="min-width:0">
+          <h3 id="chatTitle" style="margin:0">Conversation</h3>
+          <small class="muted">Private conversation</small>
         </div>
+      </div>
+
+      <div
+        id="chatMessages"
+        style="min-height:180px;max-height:420px;overflow-y:auto;padding:12px;border-radius:12px;background:var(--panel);">
+        <div class="empty-state">
+          Select a conversation to begin.
+        </div>
+      </div>
+
+      <form id="sendMessageForm" style="margin-top:14px">
+        <label for="chatInput">Your message</label>
+
+        <textarea
+          id="chatInput"
+          placeholder="Write a message..."
+          maxlength="3000"
+          required></textarea>
+
+        <button class="primary" type="submit">
+          Send Message
+        </button>
+      </form>
+    </div>
       </section>
-
       <!-- COMMUNITIES -->
       <section id="page-communities" class="page">
         <h1 class="page-title">Communities</h1>

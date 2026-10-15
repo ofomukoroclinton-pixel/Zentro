@@ -1,18 +1,22 @@
 {
-  "name": "ZENTRO",
-  "short_name": "ZENTRO",
+  "name": "Zentro - Social Network",
+  "short_name": "Zentro",
+  "description": "See what's happening in your community",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#ff00ff",
+  "background_color": "#0f172a",
+  "theme_color": "#7c3aed",
+  "orientation": "any",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

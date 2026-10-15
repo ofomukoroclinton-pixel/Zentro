@@ -4379,5 +4379,13 @@ setTimeout(()=>{
 /* ===== END ZENTRO SAFE FEATURE UPGRADE V2 ===== */
 
 </script>
+
+<!-- Added for App Install - START -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+</script>
+<!-- Added for App Install - END -->
 </body>
 </html>

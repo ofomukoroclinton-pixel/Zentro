@@ -1,26 +1,14 @@
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
+const CACHE_NAME = 'zentro-v2';
+const urlsToCache = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+  );
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(clients.claim());
-});
-
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-
-  if (new URL(event.request.url).origin !== self.location.origin) {
-    return;
-  }
-
+self.addEventListener('fetch', event => {
   event.respondWith(
-    fetch(event.request).catch(async () => {
-      const cached = await caches.match(event.request);
-      if (cached) return cached;
-      return new Response("You are offline. Please reconnect and try again.", {
-        status: 503,
-        headers: { "Content-Type": "text/plain; charset=utf-8" }
-      });
-    })
+    caches.match(event.request).then(response => response || fetch(event.request))
   );
 });

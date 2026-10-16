@@ -4459,6 +4459,287 @@ setTimeout(()=>{
 
 </script>
 
+<script>
+/* ZENTRO CORE RELIABILITY + POLISH PATCH (last-loaded override) */
+(function () {
+  'use strict';
+  const $z = (id) => document.getElementById(id);
+  const escZ = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const nameZ = (p) => (p && (p.display_name || p.username)) || 'Zentro member';
+  let feedRun = 0;
+  let profileDialog = null;
+  let likeBusy = new Set();
+  let discoverLoadAt = 0;
+  let messageContactsLoadAt = 0;
+
+  // A founder identity badge is based on the confirmed account ID, not followers or payment.
+  const oldLoadVerified = zentroLoadVerifiedIds;
+  zentroLoadVerifiedIds = async function () {
+    let ids = new Set([ZENTRO_FOUNDER_UID]);
+    if (currentUser) {
+      try {
+        const { data, error } = await supabaseClient.from('zentro_verified_members').select('user_id');
+        if (error) throw error;
+        (data || []).forEach(row => { if (row.user_id) ids.add(row.user_id); });
+      } catch (error) {
+        console.warn('Member verification list could not be loaded; only the known founder identity is displayed.', error);
+      }
+    }
+    zentroVerifiedIds = ids;
+    return ids;
+  };
+
+  // Professional, consistent responsive surface and accessible interactions.
+  const css = document.createElement('style');
+  css.id = 'zentro-core-polish-v3';
+  css.textContent = `
+    :root{--z-accent:#665cff;--z-accent2:#17b8a6;--z-surface:var(--panel,#171b2b);--z-line:var(--border,#2b3147)}
+    .zentro-welcome-banner{border:1px solid rgba(102,92,255,.28);background:linear-gradient(130deg,rgba(102,92,255,.16),rgba(23,184,166,.08));border-radius:20px;padding:22px;margin:14px 0 18px}
+    .zentro-welcome-banner h2{font-size:clamp(1.25rem,3vw,1.8rem);margin:0 0 8px;letter-spacing:-.025em}
+    .zentro-welcome-banner p{margin:0;line-height:1.6}
+    .post-card,.feature-card,.zentro-member-card{border:1px solid var(--z-line);border-radius:18px;padding:16px;margin:14px 0;background:var(--z-surface);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+    .post-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}.post-avatar{width:46px;height:46px;flex:0 0 46px;border-radius:50%;object-fit:cover;background:#2b3150;display:flex;align-items:center;justify-content:center;font-weight:700}
+    .z-profile-link{border:0!important;background:transparent!important;padding:0!important;margin:0!important;width:auto!important;display:inline!important;color:inherit!important;font-weight:750;text-align:left;cursor:pointer;text-decoration:none}
+    .z-profile-link:hover{text-decoration:underline;color:var(--z-accent)!important}.z-post-author-meta{min-width:0;display:flex;flex-direction:column;gap:4px}.z-post-author-meta small{color:var(--muted,#9aa3b8)}
+    .post-image{display:block;width:100%;max-height:620px;object-fit:contain;border-radius:14px;margin:12px 0;background:rgba(0,0,0,.08)}
+    .post-actions,.feature-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.post-actions button,.feature-actions button{width:auto;min-width:80px}
+    .like-count{margin:10px 0 0;color:var(--muted,#9aa3b8);font-size:.92rem}.like-count strong{color:inherit}
+    .zentro-blue-check{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;width:17px;height:17px;border-radius:50%;background:#2388ff;color:#fff;font-size:12px;font-weight:900;margin-left:5px;box-shadow:0 0 0 2px rgba(35,136,255,.12)}
+    .zentro-founder-label,.zentro-brand-badge{display:inline-block;color:#6eb4ff;font-size:.72rem;font-weight:750;margin-left:5px;vertical-align:middle}
+    #zentroProfileDialog{position:fixed;inset:0;z-index:99999;background:rgba(5,8,18,.76);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px}
+    #zentroProfileDialog .z-profile-dialog-card{width:min(760px,100%);max-height:92dvh;overflow:auto;background:var(--panel,#171b2b);color:var(--text,#f4f5fb);border:1px solid var(--border,#2b3147);border-radius:22px;padding:20px;box-shadow:0 24px 80px rgba(0,0,0,.35)}
+    .z-profile-cover{height:150px;border-radius:15px;background:linear-gradient(120deg,rgba(102,92,255,.4),rgba(23,184,166,.3));background-size:cover;background-position:center;margin-bottom:-36px}
+    .z-profile-top{display:flex;gap:14px;align-items:end;padding:0 14px 14px}.z-profile-top img,.z-profile-initial{width:82px;height:82px;flex:0 0 82px;border-radius:50%;object-fit:cover;border:4px solid var(--panel,#171b2b);background:#303652;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800}
+    .z-profile-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.z-profile-toolbar button{width:auto}
+    #zentroMoreSheet{position:fixed;inset:0;z-index:99990;background:rgba(5,8,18,.68);display:none;align-items:flex-end;justify-content:center;padding:12px}#zentroMoreSheet.open{display:flex}#zentroMoreSheet .z-more-card{width:min(600px,100%);max-height:82dvh;overflow:auto;border:1px solid var(--z-line);border-radius:22px 22px 16px 16px;background:var(--panel,#171b2b);padding:18px;box-shadow:0 20px 60px #0005}#zentroMoreSheet .z-more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#zentroMoreSheet button{width:100%;text-align:left;margin:0}
+    #bottomNav{gap:4px;overflow-x:auto;overscroll-behavior-x:contain}#bottomNav .nav-btn{flex:1 0 64px;min-width:64px;font-size:.75rem;padding:9px 4px;white-space:nowrap}
+    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #8b83ff!important;outline-offset:3px}
+    .z-empty-state{padding:28px 16px;text-align:center;border:1px dashed var(--z-line);border-radius:16px;color:var(--muted,#9aa3b8)}
+    @media(max-width:650px){.post-card,.feature-card,.zentro-member-card{padding:13px;border-radius:15px}.zentro-welcome-banner{padding:17px;border-radius:16px}#zentroProfileDialog .z-profile-dialog-card{padding:14px}.z-profile-cover{height:120px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  `;
+  if (!$z(css.id)) document.head.appendChild(css);
+
+  // Add a mobile More sheet so every section, including Settings, is reachable on phones.
+  function ensureMoreSheet() {
+    const nav = $z('bottomNav');
+    if (!nav || $z('zentroMoreBtn')) return;
+    const more = document.createElement('button');
+    more.type = 'button'; more.id = 'zentroMoreBtn'; more.className = 'nav-btn';
+    more.innerHTML = '☰<br>More'; more.setAttribute('aria-label','More Zentro sections');
+    nav.appendChild(more);
+    const sheet = document.createElement('div'); sheet.id = 'zentroMoreSheet'; sheet.innerHTML = `<div class="z-more-card" role="dialog" aria-modal="true" aria-label="More Zentro sections"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0 0 14px">More from Zentro</h2><button type="button" id="zentroCloseMore" class="secondary" style="width:auto">Close</button></div><div class="z-more-grid"></div></div>`;
+    document.body.appendChild(sheet);
+    const items = [['communities','👥 Communities'],['live','🎙️ Live & Audio'],['notifications','🔔 Notifications'],['settings','⚙️ Settings'],['saved','🔖 Saved Posts'],['stories','🟣 Stories'],['announcements','📣 Announcements'],['help','🛟 Help & Safety'],['founder','📊 Founder Dashboard']];
+    const grid = sheet.querySelector('.z-more-grid');
+    items.forEach(([page,label])=>{const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=label;b.dataset.zMorePage=page;grid.appendChild(b);});
+    more.addEventListener('click',()=>sheet.classList.add('open'));
+    $z('zentroCloseMore').addEventListener('click',()=>sheet.classList.remove('open'));
+    sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.classList.remove('open');});
+    sheet.addEventListener('click',e=>{const b=e.target.closest('[data-z-more-page]');if(!b)return;sheet.classList.remove('open');navigateZ(b.dataset.zMorePage);});
+  }
+
+  function navigateZ(pageName) {
+    const target = $z('page-'+pageName);
+    if (!target) { console.warn('Zentro page missing:',pageName); return; }
+    if (typeof zentroOpenPage === 'function') zentroOpenPage(pageName);
+    else { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));target.classList.add('active'); }
+    document.querySelectorAll('.nav-btn[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===pageName));
+    try { localStorage.setItem('zentroLastPage',pageName); } catch (_) {}
+    const loaders = {home:()=>{loadFeed();if(typeof zentroLoadPolls==='function')zentroLoadPolls();if(typeof zentroLoadStoriesPreview==='function')zentroLoadStoriesPreview();},discover:()=>loadZentroDiscover(),matches:()=>loadZentroMatches(),messages:()=>loadZentroMessageContacts(),communities:()=>loadZentroCommunities(),notifications:()=>loadZentroNotifications(),settings:()=>zentroLoadPrivacy(),saved:()=>zentroLoadSavedPosts(),stories:()=>zentroLoadStories(),announcements:()=>zentroLoadAnnouncements(),founder:()=>zentroLoadFounderDashboard()};
+    try { if(loaders[pageName]) Promise.resolve(loaders[pageName]()).catch(e=>console.error('Zentro page load failed:',pageName,e)); } catch(e) { console.error(e); }
+    window.scrollTo({top:0,behavior:'auto'});
+  }
+  ensureMoreSheet();
+
+  // Single authoritative navigation handler; prevents conflicting legacy listeners.
+  document.addEventListener('click', function(e) {
+    const openPage = e.target.closest('[data-open-page]');
+    if (openPage) { e.preventDefault(); e.stopImmediatePropagation(); navigateZ(openPage.dataset.openPage); return; }
+    const nav = e.target.closest('.nav-btn[data-page]');
+    if (nav) { e.preventDefault(); e.stopImmediatePropagation(); navigateZ(nav.dataset.page); return; }
+  }, true);
+
+  // Feed renderer with real profile photos, real database likes/counts and clickable authors.
+  loadFeed = async function () {
+    const feed = $z('feedList'); if (!feed) return;
+    const run = ++feedRun;
+    if (!currentUser) { feed.innerHTML='<div class="z-empty-state">Sign in to see the Zentro community feed.</div>'; return; }
+    feed.innerHTML='<div class="z-empty-state" aria-live="polite">Loading your feed…</div>';
+    try {
+      const {data:posts,error:postErr}=await supabaseClient.from('posts').select('id,user_id,content,image_url,created_at').order('created_at',{ascending:false}).limit(50);
+      if(postErr) throw postErr;
+      if(run!==feedRun)return;
+      if(!posts?.length){feed.innerHTML='<div class="z-empty-state"><h3>Your feed starts here</h3><p>Share a photo or a thought to start a real conversation.</p></div>';return;}
+      const userIds=[...new Set(posts.map(p=>p.user_id).filter(Boolean))];
+      const [{data:profiles,error:profileErr},{data:likes,error:likeErr}]=await Promise.all([
+        supabaseClient.from('profiles').select('id,username,display_name,avatar_url,city').in('id',userIds),
+        supabaseClient.from('post_likes').select('post_id,user_id').in('post_id',posts.map(p=>p.id))
+      ]);
+      if(run!==feedRun)return;
+      if(profileErr) console.warn('Some feed profile details could not load:',profileErr);
+      if(likeErr) console.warn('Like counts could not load:',likeErr);
+      await zentroLoadVerifiedIds();
+      const profileMap=new Map((profiles||[]).map(p=>[p.id,p]));
+      const counts=new Map(),liked=new Set();
+      (likes||[]).forEach(row=>{counts.set(row.post_id,(counts.get(row.post_id)||0)+1);if(row.user_id===currentUser.id)liked.add(row.post_id);});
+      feed.innerHTML=posts.map(post=>{
+        const profile=profileMap.get(post.user_id)||{};const name=nameZ(profile);const count=counts.get(post.id)||0;const mine=liked.has(post.id);
+        const avatar=profile.avatar_url?`<img class="post-avatar" loading="lazy" src="${escZ(profile.avatar_url)}" alt="${escZ(name)} profile photo" data-z-profile="${escZ(post.user_id)}" role="button" tabindex="0">`:`<button class="post-avatar" type="button" data-z-profile="${escZ(post.user_id)}" aria-label="View ${escZ(name)} profile">${escZ(name.split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase())}</button>`;
+        return `<article class="post-card" data-post-id="${escZ(post.id)}"><header class="post-header">${avatar}<div class="z-post-author-meta"><button class="z-profile-link" type="button" data-z-profile="${escZ(post.user_id)}">${escZ(name)}${zentroBadgeMarkup(post.user_id,zentroVerifiedIds)}</button><small>${escZ(profile.city||'')} ${profile.city?'· ':''}${escZ(typeof formatDate==='function'?formatDate(post.created_at):new Date(post.created_at).toLocaleString())}</small></div></header><p class="post-content">${escZ(post.content||'')}</p>${post.image_url?`<img class="post-image" loading="lazy" src="${escZ(post.image_url)}" alt="Photo shared by ${escZ(name)}">`:''}<p class="like-count">❤️ <strong>${likeErr?'—':count}</strong> ${likeErr?'likes unavailable':(count===1?'Like':'Likes')}</p><div class="post-actions"><button type="button" data-action="like" data-id="${escZ(post.id)}" aria-pressed="${mine}">${mine?'❤️ Liked':'♡ Like'} · ${likeErr?'—':count}</button><button type="button" data-action="comment" data-id="${escZ(post.id)}">💬 Comment</button><button type="button" data-action="share" data-id="${escZ(post.id)}">↗ Share</button><button type="button" data-action="save" data-id="${escZ(post.id)}">🔖 Save</button></div><div class="comment-area" id="comments-${escZ(post.id)}"></div></article>`;
+      }).join('');
+    } catch(error) { console.error('Zentro feed failed:',error); if(run===feedRun)feed.innerHTML=`<div class="z-empty-state"><h3>We couldn't load the feed</h3><p>${escZ(error.message||'Check your connection and try again.')}</p><button type="button" class="secondary" id="zentroRetryFeed">Try again</button></div>`; }
+  };
+  repairZentroFeed = loadFeed;
+
+  // A real database-backed like toggle followed by a refresh of the authoritative count.
+  togglePostLike = async function(postId) {
+    if(!currentUser){showPageMessage('Please log in to like posts.','error');return;}
+    if(likeBusy.has(postId))return;likeBusy.add(postId);
+    const card=Array.from(document.querySelectorAll('.post-card')).find(node=>node.dataset.postId===String(postId));
+    const btn=card?.querySelector('[data-action="like"]');if(btn)btn.disabled=true;
+    try {
+      const {data:existing,error:readErr}=await supabaseClient.from('post_likes').select('post_id').eq('post_id',postId).eq('user_id',currentUser.id).limit(1).maybeSingle();
+      if(readErr)throw readErr;
+      if(existing){const {error}=await supabaseClient.from('post_likes').delete().eq('post_id',postId).eq('user_id',currentUser.id);if(error)throw error;}
+      else {const {error}=await supabaseClient.from('post_likes').insert({post_id:postId,user_id:currentUser.id});if(error)throw error;}
+      await loadFeed();showPageMessage(existing?'Like removed.':'You liked this post.','success');
+    } catch(error){console.error('Zentro like failed:',error);showPageMessage('Your like was not saved: '+(error.message||'check connection and permissions'),'error');}
+    finally{likeBusy.delete(postId);if(btn&&btn.isConnected)btn.disabled=false;}
+  };
+
+  // Open a real member profile and that member's actual posts.
+  async function openMemberProfile(userId) {
+    if(!userId)return;
+    if(userId===currentUser?.id){navigateZ('profile');return;}
+    if(profileDialog)profileDialog.remove();
+    profileDialog=document.createElement('div');profileDialog.id='zentroProfileDialog';profileDialog.innerHTML='<div class="z-profile-dialog-card" role="dialog" aria-modal="true" aria-label="Member profile"><div class="z-empty-state">Loading member profile…</div></div>';document.body.appendChild(profileDialog);
+    const close=()=>{profileDialog?.remove();profileDialog=null;};
+    profileDialog.addEventListener('click',e=>{if(e.target===profileDialog)close();});
+    try {
+      const [{data:profile,error:pErr},{data:posts,error:postsErr}]=await Promise.all([
+        supabaseClient.from('profiles').select('id,username,display_name,bio,city,avatar_url,cover_url,created_at').eq('id',userId).maybeSingle(),
+        supabaseClient.from('posts').select('id,user_id,content,image_url,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(20)
+      ]);
+      if(pErr)throw pErr;if(!profile)throw new Error('This profile is unavailable or private.');if(postsErr)throw postsErr;
+      await zentroLoadVerifiedIds();
+      const name=nameZ(profile);const cards=(posts||[]).map(p=>`<article class="feature-card"><p>${escZ(p.content||'')}</p>${p.image_url?`<img class="post-image" loading="lazy" src="${escZ(p.image_url)}" alt="Photo shared by ${escZ(name)}">`:''}<small>${escZ(new Date(p.created_at).toLocaleString())}</small></article>`).join('')||'<div class="z-empty-state">This member has not shared any posts yet.</div>';
+      const avatar=profile.avatar_url?`<img src="${escZ(profile.avatar_url)}" alt="${escZ(name)} profile photo">`:`<div class="z-profile-initial">${escZ(name.split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase())}</div>`;
+      profileDialog.querySelector('.z-profile-dialog-card').innerHTML=`<div style="display:flex;justify-content:flex-end"><button type="button" class="secondary" data-z-close-profile style="width:auto">Close ✕</button></div><div class="z-profile-cover" style="${profile.cover_url?`background-image:url('${escZ(profile.cover_url).replace(/'/g,'%27')}')`:''}"></div><div class="z-profile-top">${avatar}<div><h2 style="margin:0 0 4px">${escZ(name)}${zentroBadgeMarkup(profile.id,zentroVerifiedIds)}</h2><p class="muted" style="margin:0">${escZ(profile.username?'@'+profile.username:'')}${profile.city?' · '+escZ(profile.city):''}</p></div></div><p>${escZ(profile.bio||'No bio added yet.')}</p><div class="z-profile-toolbar"><button type="button" class="primary" data-z-message="${escZ(profile.id)}">💬 Message</button><button type="button" class="secondary" data-z-report="${escZ(profile.id)}">🚩 Report</button><button type="button" class="secondary" data-z-block="${escZ(profile.id)}">⛔ Block</button></div><h3>Posts by ${escZ(name)}</h3><div>${cards}</div>`;
+      profileDialog.querySelector('[data-z-close-profile]').addEventListener('click',close);
+      profileDialog.querySelector('[data-z-message]').addEventListener('click',()=>{close();navigateZ('messages');openZentroConversation(profile.id,name);});
+      profileDialog.querySelector('[data-z-report]').addEventListener('click',()=>zentroReportUser(profile.id,name));
+      profileDialog.querySelector('[data-z-block]').addEventListener('click',()=>zentroBlockUser(profile.id,name));
+    } catch(error){console.error('Member profile failed:',error);const card=profileDialog.querySelector('.z-profile-dialog-card');if(card)card.innerHTML=`<p>We couldn't open this profile.</p><p class="muted">${escZ(error.message||'Please try again.')}</p><button type="button" class="secondary" data-z-close-profile>Close</button>`;card?.querySelector('[data-z-close-profile]')?.addEventListener('click',close);}
+  }
+
+  // Robust Discover cards with actual profile actions, Like/Pass, verified identities and safety controls.
+  loadZentroDiscover = async function() {
+    const now=Date.now(); if(now-discoverLoadAt<350)return; discoverLoadAt=now;
+    const box=$z('discoverList');if(!box)return;if(!currentUser){box.textContent='Please log in to discover members.';return;}
+    box.innerHTML='<div class="z-empty-state">Finding real Zentro members…</div>';
+    try{
+      await zentroLoadVerifiedIds();let blocked=new Set();try{blocked=await zentroGetBlockedIds();}catch(e){console.warn('Block list could not be loaded:',e);}
+      const {data:profiles,error}=await supabaseClient.from('profiles').select('id,username,display_name,bio,city,avatar_url,created_at').neq('id',currentUser.id).order('created_at',{ascending:false}).limit(100);if(error)throw error;
+      const people=(profiles||[]).filter(p=>!blocked.has(p.id));box.replaceChildren();
+      if(!people.length){box.innerHTML='<div class="z-empty-state"><h3>No members to show yet</h3><p>As real people join Zentro, they will appear here.</p></div>';return;}
+      const search=document.createElement('input');search.type='search';search.placeholder='Search members by name, username or city';search.setAttribute('aria-label','Search members');search.style.marginBottom='14px';box.appendChild(search);
+      const list=document.createElement('div');list.className='z-discover-grid';list.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px';box.appendChild(list);
+      const draw=(filter='')=>{list.replaceChildren();const q=filter.trim().toLowerCase();const filtered=people.filter(p=>[nameZ(p),p.username,p.city,p.bio].some(v=>String(v||'').toLowerCase().includes(q)));if(!filtered.length){list.innerHTML='<div class="z-empty-state">No members match that search.</div>';return;}filtered.forEach(profile=>{
+        const name=nameZ(profile);const card=document.createElement('article');card.className='zentro-member-card';
+        const head=document.createElement('div');head.style.cssText='display:flex;align-items:center;gap:12px;margin-bottom:12px';
+        const photo=profile.avatar_url?document.createElement('img'):document.createElement('div');photo.className='post-avatar';if(profile.avatar_url){photo.src=profile.avatar_url;photo.alt=name+' profile photo';photo.loading='lazy';}else{photo.textContent=name.split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase();}photo.style.cssText+=';width:60px;height:60px;flex-basis:60px;cursor:pointer';photo.dataset.zProfile=profile.id;
+        const identity=document.createElement('div');identity.style.minWidth='0';const title=document.createElement('button');title.type='button';title.className='z-profile-link';title.dataset.zProfile=profile.id;title.innerHTML=escZ(name)+zentroBadgeMarkup(profile.id,zentroVerifiedIds);const handle=document.createElement('div');handle.className='muted small';handle.textContent=profile.username?'@'+profile.username:'';identity.append(title,handle);head.append(photo,identity);card.appendChild(head);
+        const bio=document.createElement('p');bio.textContent=profile.bio||'No bio added yet.';const city=document.createElement('p');city.className='muted small';city.textContent=profile.city||'Location not shared';card.append(bio,city);
+        const actions=document.createElement('div');actions.className='feature-actions';const add=(label,cls,fn)=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;b.style.width='auto';b.addEventListener('click',async()=>{b.disabled=true;try{await fn();}catch(e){console.error(e);showPageMessage(e.message||'Action could not be completed.','error');}finally{b.disabled=false;}});actions.appendChild(b);};
+        add('View profile','secondary',()=>openMemberProfile(profile.id));
+        add('❤️ Like','primary',async()=>{await zentroRecordSwipe(profile.id,'like');await loadZentroMatches();});
+        add('Pass','secondary',async()=>{await zentroRecordSwipe(profile.id,'pass');card.remove();});
+        add('Message','secondary',()=>{navigateZ('messages');openZentroConversation(profile.id,name);});
+        add('Report','secondary',()=>zentroReportUser(profile.id,name));
+        add('Block','secondary',()=>zentroBlockUser(profile.id,name));card.appendChild(actions);list.appendChild(card);
+      });};
+      search.addEventListener('input',()=>draw(search.value));draw();
+    }catch(error){console.error('Zentro Discover failed:',error);box.innerHTML=`<div class="z-empty-state"><h3>Discover could not load</h3><p>${escZ(error.message||'Check your connection and permissions.')}</p><button type="button" class="secondary" id="zentroRetryDiscover">Try again</button></div>`;$z('zentroRetryDiscover')?.addEventListener('click',loadZentroDiscover);}
+  };
+
+  // Messaging contact list is based on actual message records and opens the selected conversation.
+  loadZentroMessageContacts = async function() {
+    const now=Date.now(); if(now-messageContactsLoadAt<350)return; messageContactsLoadAt=now;
+    const box=$z('messageContacts');if(!box)return;if(!currentUser){box.innerHTML='<div class="z-empty-state">Sign in to see your conversations.</div>';return;}
+    box.innerHTML='<div class="z-empty-state">Loading conversations…</div>';
+    try{const me=currentUser.id;const {data:messages,error}=await supabaseClient.from('direct_messages').select('sender_id,receiver_id,created_at').or(`sender_id.eq.${me},receiver_id.eq.${me}`).order('created_at',{ascending:false}).limit(500);if(error)throw error;
+      const ids=[...new Set((messages||[]).map(m=>m.sender_id===me?m.receiver_id:m.sender_id).filter(id=>id&&id!==me))];
+      if(!ids.length){box.innerHTML='<div class="z-empty-state"><h3>Your conversations will appear here</h3><p>Open a member in Discover and choose Message to start a real conversation.</p><button type="button" class="primary" id="zentroStartDiscover">Discover people</button></div>';$z('zentroStartDiscover')?.addEventListener('click',()=>navigateZ('discover'));return;}
+      const {data:people,error:profileError}=await supabaseClient.from('profiles').select('id,username,display_name,avatar_url').in('id',ids);if(profileError)throw profileError;const map=new Map((people||[]).map(p=>[p.id,p]));box.replaceChildren();
+      ids.forEach(id=>{const p=map.get(id)||{id};const name=nameZ(p);const b=document.createElement('button');b.type='button';b.className='secondary';b.style.cssText='display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:7px 0;padding:12px';const label=document.createElement('span');label.textContent=name+(p.username?' · @'+p.username:'');const img=document.createElement(p.avatar_url?'img':'span');if(p.avatar_url){img.src=p.avatar_url;img.alt='';}else img.textContent=name.slice(0,1).toUpperCase();img.style.cssText='width:42px;height:42px;border-radius:50%;object-fit:cover;background:#303652;display:inline-flex;align-items:center;justify-content:center';b.append(img,label);b.addEventListener('click',()=>openZentroConversation(id,name));box.appendChild(b);});
+    }catch(error){console.error('Zentro message contacts failed:',error);box.innerHTML=`<div class="z-empty-state"><h3>Conversations could not load</h3><p>${escZ(error.message||'Please retry.')}</p><button type="button" class="secondary" id="zentroRetryMessages">Try again</button></div>`;$z('zentroRetryMessages')?.addEventListener('click',loadZentroMessageContacts);}
+  };
+
+  // Make opening a conversation navigate to Messages and give a clear loading state.
+  const oldOpenConversation = openZentroConversation;
+  openZentroConversation = function(userId,userName){navigateZ('messages');oldOpenConversation(userId,userName);};
+
+  // One capture-phase interaction handler prevents old duplicate handlers from double-writing.
+  document.addEventListener('click', async function(e) {
+    const retryFeed=e.target.closest('#zentroRetryFeed');if(retryFeed){e.preventDefault();e.stopImmediatePropagation();loadFeed();return;}
+    const retryDiscover=e.target.closest('#zentroRetryDiscover');if(retryDiscover){e.preventDefault();e.stopImmediatePropagation();loadZentroDiscover();return;}
+    const retryMessages=e.target.closest('#zentroRetryMessages');if(retryMessages){e.preventDefault();e.stopImmediatePropagation();loadZentroMessageContacts();return;}
+    const profile=e.target.closest('[data-z-profile]');if(profile){e.preventDefault();e.stopImmediatePropagation();openMemberProfile(profile.dataset.zProfile);return;}
+    const action=e.target.closest('[data-action]');if(!action)return;
+    const kind=action.dataset.action,id=action.dataset.id;if(!id)return;
+    e.preventDefault();e.stopImmediatePropagation();
+    if(kind==='like'){await togglePostLike(id);return;}
+    if(kind==='comment'){await loadComments(id);return;}
+    if(kind==='share'){const url=location.origin+location.pathname+'#zentro-post-'+encodeURIComponent(id);try{if(navigator.share)await navigator.share({title:'Zentro post',text:'See this post on Zentro',url});else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);showPageMessage('Post link copied.','success');}else{window.prompt('Copy this post link:',url);}}catch(err){if(err.name!=='AbortError')showPageMessage('Could not share this post.','error');}return;}
+    if(kind==='save'){try{await zentroToggleSavedPost(id);action.textContent='🔖 Saved';}catch(err){showPageMessage(err.message||'Could not save this post.','error');}return;}
+  },true);
+
+  // Publish text + photo in one atomic user flow, using the existing post-images bucket.
+  document.addEventListener('submit', async function(e) {
+    const form=e.target;
+    if(form?.id==='createPostForm'){
+      e.preventDefault();e.stopImmediatePropagation();
+      if(!currentUser){showPageMessage('Please sign in before publishing.','error');return;}
+      const text=($z('postText')?.value||'').trim();const file=$z('postImage')?.files?.[0];if(!text&&!file){showPageMessage('Write a caption or choose a photo first.','error');return;}
+      const btn=form.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Publishing…';}
+      try{let image_url=null;if(file){if(!file.type.startsWith('image/'))throw new Error('Please choose an image file.');if(file.size>12*1024*1024)throw new Error('Choose a photo smaller than 12 MB.');const ext=(file.name.split('.').pop()||'jpg').replace(/[^a-zA-Z0-9]/g,'').slice(0,8)||'jpg';const path=`posts/${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;const {error:uploadErr}=await supabaseClient.storage.from('post-images').upload(path,file,{upsert:false,contentType:file.type});if(uploadErr)throw uploadErr;image_url=supabaseClient.storage.from('post-images').getPublicUrl(path).data.publicUrl;}
+        const {error}=await supabaseClient.from('posts').insert({user_id:currentUser.id,content:text,image_url});if(error)throw error;form.reset();await loadFeed();showPageMessage('Your post was published.','success');
+      }catch(err){console.error('Zentro post publish failed:',err);showPageMessage('Post was not published: '+(err.message||'check connection, storage and permissions.'),'error');}
+      finally{if(btn){btn.disabled=false;btn.textContent='Publish Post';}}return;
+    }
+    if(form?.id==='sendMessageForm'){
+      e.preventDefault();e.stopImmediatePropagation();
+      const input=$z('chatInput');const content=(input?.value||'').trim();if(!currentUser||!window.zentroActiveChatUserId && !zentroActiveChatUserId){showPageMessage('Open a conversation first.','error');return;}if(!content)return;
+      const btn=form.querySelector('button[type="submit"]');if(btn)btn.disabled=true;
+      try{const {error}=await supabaseClient.from('direct_messages').insert({sender_id:currentUser.id,receiver_id:zentroActiveChatUserId,content});if(error)throw error;input.value='';await loadZentroChatMessages();await loadZentroMessageContacts();showPageMessage('Message sent.','success');}
+      catch(err){console.error('Zentro send message failed:',err);showPageMessage('Message was not sent: '+(err.message||'check connection and permissions.'),'error');}
+      finally{if(btn)btn.disabled=false;}return;
+    }
+    const commentForm=form?.matches?.('.comment-form')?form:null;if(commentForm){
+      e.preventDefault();e.stopImmediatePropagation();if(!currentUser){showPageMessage('Please sign in to comment.','error');return;}const input=commentForm.elements.namedItem('comment');const content=(input?.value||'').trim();const postId=commentForm.dataset.postId;if(!content||!postId)return;
+      const btn=commentForm.querySelector('button[type="submit"]');if(btn)btn.disabled=true;try{const {error}=await supabaseClient.from('comments').insert({post_id:postId,user_id:currentUser.id,content});if(error)throw error;await loadComments(postId);showPageMessage('Comment added.','success');}catch(err){console.error('Zentro comment failed:',err);showPageMessage('Comment was not saved: '+(err.message||'check permissions.'),'error');}finally{if(btn)btn.disabled=false;}
+    }
+  },true);
+
+  // Keep founder badge visible wherever the founder's real account identity appears.
+  function refreshFounderIdentity(renderProfile=true) {
+    if(!currentUser)return;
+    zentroVerifiedIds.add(ZENTRO_FOUNDER_UID);
+    if(renderProfile && currentProfile && typeof oldRenderProfile==='function')oldRenderProfile(currentProfile);
+    const sidebar=$z('sidebarUserName');if(sidebar&&currentUser.id===ZENTRO_FOUNDER_UID){sidebar.textContent=nameZ(currentProfile);let b=sidebar.parentElement?.querySelector('.zentro-identity-badge');if(!b){b=document.createElement('span');b.className='zentro-identity-badge';sidebar.insertAdjacentElement('afterend',b);}b.innerHTML=zentroBadgeMarkup(currentUser.id,zentroVerifiedIds);}
+  }
+  const oldRenderProfile=renderZentroProfile;
+  renderZentroProfile=function(profile){oldRenderProfile(profile);refreshFounderIdentity(false);};
+
+  // Retry the essential screens after the existing session restoration has completed.
+  setTimeout(async()=>{try{if(!currentUser){const {data}=await supabaseClient.auth.getSession();if(data?.session?.user)currentUser=data.session.user;}if(currentUser){await zentroLoadVerifiedIds();refreshFounderIdentity();await loadFeed();const last=localStorage.getItem('zentroLastPage');if(last&&last!=='home'&&$z('page-'+last))navigateZ(last);else if(typeof zentroLoadFounderDashboard==='function')zentroLoadFounderDashboard();}}catch(error){console.error('Zentro startup recovery:',error);}},1800);
+
+  console.info('Zentro reliability patch loaded: core feed, profiles, likes, navigation and messaging handlers are connected.');
+})();
+
+</script>
+
 <!-- Added for App Install - START -->
 <script>
 if ('serviceWorker' in navigator) {

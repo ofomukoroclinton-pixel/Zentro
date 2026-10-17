@@ -5513,7 +5513,7 @@ if ('serviceWorker' in navigator) {
  }
 })();
 </script>
-<!-- ZENTRO FINAL FIX - TOP NOTIFICATION + SOUND + EMAIL FOR ALL USERS -->
+<!-- ZENTRO FINAL FIX - TOP NOTIFICATION + SOUND + EMAIL FOR ALL USERS - READY -->
 <audio id="zentroSound" preload="auto" src="https://cdn.pixabay.com/audio/2022/03/24/audio_85a0e1e5c8.mp3"></audio>
 <div id="zentro-top" style="display:none;position:fixed;top:0;left:0;right:0;background:#1e1e32;color:white;padding:14px;z-index:99999;border-bottom:2px solid #6c5cff;">
   <b id="zt-t">Zentro</b><br><small id="zt-b">New activity</small>
@@ -5525,27 +5525,25 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('click', async function autoAllow(){ 
   try{ if('Notification' in window && Notification.permission!=='granted') await Notification.requestPermission(); }catch(e){} 
   document.removeEventListener('click', autoAllow);
-}, {once:true});
+},{once:true});
 
-// Main function - call this when someone likes/follows/messages
 function zentroNotifyAllUsers(toEmail, title, message){
-  // 1. Sound
   document.getElementById('zentroSound').play().catch(()=>{});
   if(navigator.vibrate) navigator.vibrate([300,100,300]);
-  // 2. Top of screen outside app
   if(Notification.permission==='granted'){ 
     new Notification(title,{body:message, icon:'https://inton-pixel.github.io/favicon.ico'}); 
   } else {
-    // Fallback top bar inside app (works 100%)
     document.getElementById('zt-t').innerText=title;
     document.getElementById('zt-b').innerText=message;
     document.getElementById('zentro-top').style.display='block';
     setTimeout(()=>{ document.getElementById('zentro-top').style.display='none'; }, 6000);
   }
-  // 3. Email to inbox top for all users
-  fetch('https://qzqjdzkqzqjdzkq.supabase.co/functions/v1/zentro-notification-email'.replace('qzqjdzkqzqjdzkq', 'YOUR_PROJECT_ID'),{
+  fetch('https://rcmxoekbqjxdpvhwogqd.supabase.co/functions/v1/zentro-notification-email',{
     method:'POST',
-    headers:{'Authorization':'Bearer YOUR_ANON_KEY','Content-Type':'application/json'},
+    headers:{
+      'Authorization':'Bearer sb_publishable_S7JyGLPqGNoZvf39P3c2cQ_Or_SorgJ',
+      'Content-Type':'application/json'
+    },
     body: JSON.stringify({to_email:toEmail, title:title, message:message})
   });
 }

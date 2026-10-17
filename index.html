@@ -17,7 +17,34 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <!-- Added for App Install - END -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "8d522b4a-c5df-40d5-820e-b15efe3fb400",
+      notifyButton: { enable: true },
+    });
+    // Auto-ask for permission
+    OneSignal.Slidedown.promptPush();
+  });
 
+  // ZENTRO POP-UP SOUND FUNCTION
+  window.zentroPopSound = function(name, msg){
+    const audio = new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_1e9c0aee7a.mp3');
+    audio.volume = 1.0;
+    audio.play().catch(e=>{});
+    
+    // Vibrate like WhatsApp
+    if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    
+    // Show custom in-app banner
+    const div = document.createElement('div');
+    div.innerHTML = `<div style="position:fixed;top:10px;left:10px;right:10px;background:#111;color:#fff;padding:12px 16px;border-radius:12px;z-index:999999;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.5)"><div style="width:40px;height:40px;background:#7c3aed;border-radius:50%;display:grid;place-items:center;font-weight:bold">Z</div><div><b>${name}</b><br><span style="opacity:.8">${msg}</span></div></div>`;
+    document.body.appendChild(div);
+    setTimeout(()=>div.remove(), 4000);
+  }
+</script>
 <style>
 :root {
   --bg: #10131f;

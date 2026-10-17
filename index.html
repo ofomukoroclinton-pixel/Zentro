@@ -17,34 +17,48 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <!-- Added for App Install - END -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <!-- ZENTRO DIRECT POP-UP + SOUND - WORKING 100% -->
 <script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "8d522b4a-c5df-40d5-820e-b15efe3fb400",
-      notifyButton: { enable: true },
+// Ask permission immediately
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(Notification && Notification.permission !== "granted"){
+    Notification.requestPermission().then(p=>{
+      console.log("Zentro Permission:", p);
     });
-    // Auto-ask for permission
-    OneSignal.Slidedown.promptPush();
-  });
-
-  // ZENTRO POP-UP SOUND FUNCTION
-  window.zentroPopSound = function(name, msg){
-    const audio = new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_1e9c0aee7a.mp3');
-    audio.volume = 1.0;
-    audio.play().catch(e=>{});
-    
-    // Vibrate like WhatsApp
-    if(navigator.vibrate) navigator.vibrate([200,100,200]);
-    
-    // Show custom in-app banner
-    const div = document.createElement('div');
-    div.innerHTML = `<div style="position:fixed;top:10px;left:10px;right:10px;background:#111;color:#fff;padding:12px 16px;border-radius:12px;z-index:999999;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.5)"><div style="width:40px;height:40px;background:#7c3aed;border-radius:50%;display:grid;place-items:center;font-weight:bold">Z</div><div><b>${name}</b><br><span style="opacity:.8">${msg}</span></div></div>`;
-    document.body.appendChild(div);
-    setTimeout(()=>div.remove(), 4000);
   }
+});
+
+// Main Zentro Sound + Pop-up
+window.zentroPopSound = function(name, msg){
+  console.log("Zentro Notification:", name, msg);
+  try{
+    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3');
+    audio.volume = 1;
+    audio.play();
+  }catch(e){}
+  
+  if(navigator.vibrate) navigator.vibrate([300,100,300]);
+  
+  if(Notification.permission === "granted"){
+    new Notification(name || "Zentro", {
+      body: msg || "New message from Zentro",
+      icon: "./icon-192.png",
+      vibrate: [200,100,200]
+    });
+  } else {
+    // Fallback in-page pop-up if blocked
+    const box = document.createElement('div');
+    box.style.cssText = "position:fixed;top:15px;left:10px;right:10px;background:#1e1e2f;color:#fff;padding:14px;border-radius:12px;z-index:9999999;border-left:4px solid #7c3aed;font-family:sans-serif";
+    box.innerHTML = `<b>🔔 ${name||'Zentro'}</b><br>${msg||'New message'}`;
+    document.body.appendChild(box);
+    setTimeout(()=>box.remove(), 4000);
+  }
+};
+
+// TEST IT NOW - you should hear sound in 2 seconds
+setTimeout(()=>{ zentroPopSound("Zentro Test", "If you see this, pop-up works!"); }, 2000);
 </script>
+<!-- END ZENTRO POP-UP -->
 <style>
 :root {
   --bg: #10131f;

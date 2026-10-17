@@ -5513,68 +5513,22 @@ if ('serviceWorker' in navigator) {
  }
 })();
 </script>
-<!-- ZENTRO FORCE-ON - NO ASKING - PASTE ABOVE </body> -->
+<!-- ZENTRO FORCE-ON ALERTS START -->
 <script>
-// FORCE ON BY DEFAULT - NO OFF
-localStorage.setItem('zentroPopups','enabled');
-
-function zentroForceAlert(title, message){
-  // SOUND - ALWAYS
+// FORCE POPUP + SOUND + VIBRATE
+function zentroForceAlert(title, msg){
   try{
-    const a = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3');
-    a.volume = 1;
-    a.play();
+    if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    let audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    audio.volume = 1.0;
+    audio.play().catch(()=>{});
   }catch(e){}
-  
-  // VIBRATE - ALWAYS
-  if(navigator.vibrate) navigator.vibrate([300,100,300]);
-
-  // BROWSER POP-UP - IF PERMISSION GRANTED (auto)
-  if(Notification && Notification.permission === "granted"){
-    new Notification(title, { body: message, icon: "./icon-192.png" });
-  }
-
-  // IN-APP POP-UP - ALWAYS SHOWS (NO PERMISSION NEEDED) - THIS IS YOUR FORCE
-  const b = document.createElement('div');
-  b.style.cssText="position:fixed;top:15px;left:10px;right:10px;background:#1a1a2e;color:#fff;padding:16px;border-radius:14px;z-index:999999999;border-left:5px solid #7c3aed;box-shadow:0 8px 30px rgba(0,0,0,.6);font-family:sans-serif;font-size:15px";
-  b.innerHTML=`<b>${title}</b><br>${message}`;
-  document.body.appendChild(b);
-  setTimeout(()=>b.remove(), 6000);
+  let box = document.createElement('div');
+  box.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#111;color:#fff;padding:16px 20px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);font-family:sans-serif;min-width:260px;animation:zentroSlide .3s ease;';
+  box.innerHTML=`<div style="font-weight:bold;margin-bottom:4px;">${title}</div><div style="font-size:14px;opacity:.9;">${msg}</div>`;
+  document.body.appendChild(box);
+  setTimeout(()=>{box.style.opacity='0';box.style.transform='translateX(100px)';setTimeout(()=>box.remove(),300)},4000);
 }
-
-// AUTO TURN ON NOTIFICATION ON FIRST ANY TAP - NO BUTTON ASKING
-let zentroPermissionTried = false;
-document.addEventListener('click', ()=>{
-  if(zentroPermissionTried) return;
-  zentroPermissionTried = true;
-  if(Notification && Notification.permission === "default"){
-    Notification.requestPermission().then(()=>{});
-  }
-}, {once:true});
-
-// AUTO WATCH FOR ANY NEW ACTIVITY
-const observer = new MutationObserver((mutations)=>{
-  mutations.forEach(m=>{
-    m.addedNodes.forEach(node=>{
-      if(!node.innerText) return;
-      let txt = node.innerText.substring(0,80);
-      if(txt.length < 3) return;
-      
-      // Any new element added is an activity - ALERT FORCE
-      if(node.className && node.className.toString().toLowerCase().includes("message")){
-        if(!txt.toLowerCase().includes("you:")){
-          zentroForceAlert("💬 New Message", txt);
-        }
-      }
-    });
-  });
-});
-
-window.addEventListener('load', ()=>{
-  observer.observe(document.body, { childList: true, subtree: true });
-});
-
-// FUNCTION YOU CAN CALL ANYWHERE FOR ANY ACTIVITY
 window.zentroNotify = function(type, msg){
   let title = "🔔 Zentro";
   if(type==="like") title="❤️ New Like";
@@ -5587,12 +5541,32 @@ window.zentroNotify = function(type, msg){
   if(type==="area") title="📍 Near You";
   zentroForceAlert(title, msg);
 }
-  // DIRECT TEST LINK - AUTO DING
+
+// AUTO HOOK - Automatically catches Like/Comment/Follow clicks
+document.addEventListener('click', function(e){
+  let btn = e.target.closest('button, [role=\"button\"], .like-btn, .follow-btn');
+  if(!btn) return;
+  let txt = (btn.innerText || '').toLowerCase();
+  let cls = (btn.className || '').toLowerCase();
+  
+  if(txt.includes('like') || cls.includes('like') || btn.dataset.action==='like'){
+    setTimeout(()=>zentroNotify("like", "Someone liked your post ❤️"), 300);
+  }
+  if(txt.includes('comment') || cls.includes('comment') || btn.dataset.action==='comment'){
+    setTimeout(()=>zentroNotify("message", "New comment on your post 💬"), 300);
+  }
+  if(txt.includes('follow') || cls.includes('follow') || txt.includes('connect')){
+    setTimeout(()=>zentroNotify("follow", "Someone followed you 👥"), 300);
+  }
+});
+
+// DIRECT TEST LINK - AUTO DING
 if(location.hash.includes('testAlert')){
   setTimeout(()=>{zentroNotify("founder","Testing Zentro alerts - WORKS! 👑")},1500);
-    }
+}
 </script>
-<!-- END FORCE-ON CODE -->
+<style>@keyframes zentroSlide{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}</style>
+<!-- ZENTRO FORCE-ON ALERTS END -->
 
 </body>
 </html>

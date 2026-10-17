@@ -5513,81 +5513,153 @@ if ('serviceWorker' in navigator) {
  }
 })();
 </script>
-<!-- ZENTRO ULTIMATE - ALL IN ONE - NOTIFICATION + WHATSAPP BAR + COPY + DELETE -->
+<!-- ZENTRO COMPLETE NOTIFICATION SYSTEM - ALL TYPES + LONG PRESS COPY/DELETE -->
 <style>
-#zentro-wa-bar{position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#111b21;display:flex;align-items:center;gap:8px;padding:6px 8px 10px 8px;box-shadow:0 -2px 10px rgba(0,0,0,.3)}
+#zentro-wa-bar{position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#111b21;display:flex;align-items:center;gap:8px;padding:6px 8px 10px 8px}
 #zentro-wa-input-wrap{flex:1;background:#2a3942;border-radius:25px;display:flex;align-items:center;padding:6px 10px;gap:6px}
 #zentro-wa-input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:16px;padding:6px}
 #zentro-wa-bar button{background:transparent;border:none;cursor:pointer;font-size:22px;color:#8696a0}
 #zentro-wa-mic{width:48px;height:48px;border-radius:50%;background:#25d366 !important;color:white !important;display:flex;align-items:center;justify-content:center;font-size:24px !important}
 #zentro-wa-send{width:48px;height:48px;border-radius:50%;background:#25d366 !important;color:white !important;display:none;align-items:center;justify-content:center}
-#zentro-emoji-panel{position:fixed;bottom:70px;left:8px;background:#233138;border-radius:12px;padding:10px;display:none;grid-template-columns:repeat(6,1fr);gap:6px;z-index:100000;max-width:260px}
-#zentro-emoji-panel span{font-size:22px;cursor:pointer;padding:4px}
+#zentro-emoji-panel{position:fixed;bottom:70px;left:8px;background:#233138;border-radius:12px;padding:10px;display:none;grid-template-columns:repeat(6,1fr);gap:6px;z-index:100000}
+#zentro-emoji-panel span{font-size:22px;cursor:pointer}
 #zentro-recording{position:fixed;bottom:80px;left:0;right:0;background:#111b21;color:white;padding:16px;display:none;align-items:center;justify-content:space-between;z-index:100000}
-#zentro-copy-menu{position:fixed;z-index:1000000;background:#233138;color:white;border-radius:12px;padding:8px 0;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;min-width:160px}
-#zentro-copy-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;background:transparent;border:none;color:white;font-size:15px;cursor:pointer}
-#zentro-copy-toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:8px 16px;border-radius:20px;font-size:14px;z-index:1000001;display:none}
+#zentro-copy-menu{position:fixed;z-index:1000000;background:#233138;color:white;border-radius:16px;padding:8px 0;box-shadow:0 10px 30px rgba(0,0,0,.6);display:none;min-width:190px}
+#zentro-copy-menu button{display:flex;align-items:center;gap:12px;width:100%;padding:14px 18px;background:transparent;border:none;color:white;font-size:15px;cursor:pointer}
 body{padding-bottom:85px !important}
-@keyframes zentroSlide{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
 </style>
 
-<div id="zentro-recording"><div><span style="color:red">●</span> Recording... <span id="zentro-rec-timer">0:00</span></div><button id="zentro-rec-cancel" style="color:#8696a0">Cancel</button><button id="zentro-rec-send" style="background:#25d366;color:white;padding:8px 14px;border-radius:20px">Send</button></div>
-<div id="zentro-emoji-panel"><span>😊</span><span>😂</span><span>❤️</span><span>🔥</span><span>👏</span><span>😍</span><span>🥰</span><span>😎</span><span>🤣</span><span>😭</span><span>🙏</span><span>💯</span><span>👍</span><span>🎉</span><span>😁</span><span>😘</span><span>🤩</span><span>💪</span></div>
+<div id="zentro-recording"><div><span style="color:red">●</span> Recording... <span id="zentro-rec-timer">0:00</span></div><button id="zentro-rec-cancel">Cancel</button><button id="zentro-rec-send" style="background:#25d366;color:white;padding:8px 14px;border-radius:20px">Send</button></div>
+<div id="zentro-emoji-panel"><span>😊</span><span>😂</span><span>❤️</span><span>🔥</span><span>👏</span><span>😍</span></div>
 <div id="zentro-copy-menu"><button id="zentro-copy-btn">📋 Copy</button><button id="zentro-copy-del-btn" style="color:#ff6b6b">🗑️ Delete</button></div>
-<div id="zentro-copy-toast">Copied ✓</div>
 
-<div id="zentro-wa-bar">
+<div id="zentro-wa-bar" style="display:none">
   <button id="zentro-emoji-btn">😊</button>
-  <div id="zentro-wa-input-wrap">
-    <input id="zentro-wa-input" placeholder="Message" autocomplete="off"/>
-    <button id="zentro-doc-btn">📎</button>
-    <button id="zentro-cam-btn">📷</button>
-  </div>
-  <button id="zentro-wa-mic">🎤</button>
-  <button id="zentro-wa-send">➤</button>
+  <div id="zentro-wa-input-wrap"><input id="zentro-wa-input" placeholder="Message"/><button id="zentro-doc-btn">📎</button><button id="zentro-cam-btn">📷</button></div>
+  <button id="zentro-wa-mic">🎤</button><button id="zentro-wa-send">➤</button>
 </div>
-<input type="file" id="zentro-doc-input" style="display:none" accept="*/*"/><input type="file" id="zentro-cam-input" style="display:none" accept="image/*,video/*"/>
+<input type="file" id="zentro-doc-input" style="display:none"/><input type="file" id="zentro-cam-input" style="display:none" accept="image/*,video/*"/>
 
 <script>
-// ===== 1. LOUD SYSTEM NOTIFICATION - LIKE TIKTOK / WHATSAPP =====
-if("Notification" in window && Notification.permission==="default"){ setTimeout(()=>Notification.requestPermission(),1000); }
-function playLoud(){ try{ if(navigator.vibrate) navigator.vibrate([400,100,400,100,400]); let a=new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625cfa9d2.mp3?filename=notification-sound-11440.mp3'); a.volume=1; a.play().catch(()=>{}); setTimeout(()=>{ let b=new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625cfa9d2.mp3?filename=notification-sound-11440.mp3'); b.volume=1; b.play().catch(()=>{}); },400);}catch(e){} }
-function zentroForceAlert(title,msg,target){
-  playLoud();
-  try{ if("Notification" in window && Notification.permission==="granted"){ let n=new Notification(title,{body:msg,icon:location.origin+'/favicon.ico',vibrate:[400,100,400,100,400],requireInteraction:true}); n.onclick=()=>{ window.focus(); n.close(); if(target) location.hash=target; }; } }catch(e){}
-  let box=document.createElement('div'); box.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#111;color:#fff;padding:16px 20px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.5);min-width:280px;animation:zentroSlide .3s ease;'; box.innerHTML=`<div style="font-weight:bold">${title}</div><div style="font-size:14px;opacity:.9;margin-top:6px">${msg}</div>`; document.body.appendChild(box); setTimeout(()=>{box.style.opacity='0';setTimeout(()=>box.remove(),300)},6000);
+// HIDE OLD BOX
+setInterval(()=>{ document.querySelectorAll('textarea').forEach(t=>{ if(t.placeholder && t.placeholder.toLowerCase().includes('write a message')){ if(t.parentElement) t.parentElement.style.display='none'; }}); },600);
+setInterval(()=>{ let bar=document.getElementById('zentro-wa-bar'); bar.style.display=document.body.innerHTML.includes('Private conversation')?'flex':'none'; },800);
+
+if("Notification" in window && Notification.permission==="default"){ Notification.requestPermission(); }
+
+function playFacebookPop(){
+  try{
+    let a=new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625cfa9d2.mp3?filename=facebook-messenger-notification-11442.mp3');
+    a.volume=1.0; a.play().catch(()=>{ let b=new Audio('https://notificationsounds.com/storage/sounds/file-sounds-1152-pristine.mp3'); b.volume=1.0; b.play().catch(()=>{}); });
+  }catch(e){}
 }
-window.zentroNotify=(type,msg,opts)=>{ opts=opts||{}; let t=opts.userName||"Zentro"; let target="#messages"; if(type==="like") t=(opts.userName||"Someone")+" liked your post"; if(type==="comment") t=(opts.userName||"Someone")+" commented"; if(type==="private") t=opts.userName||"Olivia"; if(type==="founder") t="👑 Founder"; zentroForceAlert(t,msg,target); };
 
-// ===== 2. WHATSAPP BAR LOGIC =====
-let waInput=document.getElementById('zentro-wa-input'), waMic=document.getElementById('zentro-wa-mic'), waSend=document.getElementById('zentro-wa-send'), emojiBtn=document.getElementById('zentro-emoji-btn'), emojiPanel=document.getElementById('zentro-emoji-panel'), docBtn=document.getElementById('zentro-doc-btn'), camBtn=document.getElementById('zentro-cam-btn'), docInput=document.getElementById('zentro-doc-input'), camInput=document.getElementById('zentro-cam-input');
-document.querySelectorAll('div[style*="bottom: 0"]').forEach(el=>{ if(el.id!=='zentro-wa-bar' && el.innerHTML.toLowerCase().includes('send')) el.style.display='none'; });
-waInput.addEventListener('input',()=>{ if(waInput.value.trim()){ waMic.style.display='none'; waSend.style.display='flex'; } else { waMic.style.display='flex'; waSend.style.display='none'; } });
-emojiBtn.onclick=()=>{ emojiPanel.style.display=emojiPanel.style.display==='grid'?'none':'grid'; }; emojiPanel.querySelectorAll('span').forEach(s=>s.onclick=()=>{ waInput.value+=s.innerText; waInput.dispatchEvent(new Event('input')); emojiPanel.style.display='none'; waInput.focus(); });
-docBtn.onclick=()=>docInput.click(); docInput.onchange=()=>{ let f=docInput.files[0]; if(!f) return; sendBubble(`📄 ${f.name} (${(f.size/1024).toFixed(1)}KB)`); zentroNotify("private",`Doc: ${f.name}`,{userName:"You"}); };
-camBtn.onclick=()=>camInput.click(); camInput.onchange=()=>{ let f=camInput.files[0]; if(!f) return; let r=new FileReader(); r.onload=e=>{ sendBubble(`<img src="${e.target.result}" style="max-width:200px;border-radius:12px">`); zentroNotify("private","Photo 📷",{userName:"You"}); }; r.readAsDataURL(f); };
-function sendBubble(html){ let w=document.createElement('div'); w.style.cssText='display:flex;justify-content:flex-end;margin:8px 12px;'; let b=document.createElement('div'); b.style.cssText='background:#6366f1;color:white;padding:10px 14px;border-radius:18px 18px 4px 18px;max-width:75%;position:relative;'; b.innerHTML=html+`<div style="font-size:11px;opacity:.8;margin-top:4px;text-align:right">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`; w.appendChild(b); (document.querySelector('[style*="overflow-y"]')||document.body).appendChild(w); window.scrollTo(0,document.body.scrollHeight); }
-waSend.onclick=()=>{ if(!waInput.value.trim()) return; sendBubble(waInput.value); zentroNotify("private",waInput.value,{userName:"You"}); waInput.value=''; waInput.dispatchEvent(new Event('input')); };
-// ===== VOICE NOTE =====
-let mediaRecorder,audioChunks=[],recTimer,sec=0,recUI=document.getElementById('zentro-recording'),recTimerEl=document.getElementById('zentro-rec-timer');
-async function startRec(){ try{ let s=await navigator.mediaDevices.getUserMedia({audio:true}); mediaRecorder=new MediaRecorder(s); audioChunks=[]; mediaRecorder.ondataavailable=e=>audioChunks.push(e.data); mediaRecorder.onstop=()=>{ let blob=new Blob(audioChunks,{type:'audio/webm'}); let url=URL.createObjectURL(blob); sendBubble(`<audio controls src="${url}" style="width:180px"></audio><div>🎤 ${sec}s</div>`); s.getTracks().forEach(t=>t.stop()); }; mediaRecorder.start(); recUI.style.display='flex'; sec=0; recTimer=setInterval(()=>{ sec++; recTimerEl.innerText=`${Math.floor(sec/60)}:${(sec%60).toString().padStart(2,'0')}`; },1000); }catch{ alert('Allow microphone for voice note'); } }
-function stopRec(send){ clearInterval(recTimer); recUI.style.display='none'; if(mediaRecorder&&mediaRecorder.state!=='inactive'){ if(send) mediaRecorder.stop(); else mediaRecorder.stop(); } }
-waMic.addEventListener('touchstart',e=>{ e.preventDefault(); startRec(); }); waMic.addEventListener('touchend',()=>stopRec(true)); waMic.addEventListener('mousedown',startRec); waMic.addEventListener('mouseup',()=>stopRec(true));
-document.getElementById('zentro-rec-cancel').onclick=()=>stopRec(false); document.getElementById('zentro-rec-send').onclick=()=>stopRec(true);
+// ===== COMPLETE NOTIFICATION SYSTEM - ALL TYPES YOU ASKED =====
+window.zentroNotify = function(type, data){
+  // data = {fromName, message, postId, userId}
+  data = data||{};
+  let fromName = data.fromName||"Zentro";
+  let message = data.message||"";
+  let title = "";
+  let body = "";
 
-// ===== 3. LONG PRESS COPY + DELETE =====
-let lpTimer, curEl, curText, curWrap;
-function toast(m){ let t=document.getElementById('zentro-copy-toast'); t.innerText=m; t.style.display='block'; setTimeout(()=>t.style.display='none',2000); }
-function showMenu(x,y,isOwn){ let m=document.getElementById('zentro-copy-menu'); m.style.left=(x>window.innerWidth/2?x-170:x)+'px'; m.style.top=(y>120?y-90:y+20)+'px'; m.style.display='block'; document.getElementById('zentro-copy-del-btn').style.display=isOwn?'flex':'none'; }
-function hideMenu(){ document.getElementById('zentro-copy-menu').style.display='none'; }
-document.addEventListener('touchstart',e=>{ let t=e.target.closest('div,p,span,h3'); if(!t||t.closest('#zentro-wa-bar')||t.closest('button')) return; let txt=(t.innerText||'').trim(); if(txt.length<1||txt.length>500) return; lpTimer=setTimeout(()=>{ curEl=t; curText=txt; curWrap=t.closest('div[style*="background"]')?.parentElement||t; if(navigator.vibrate) navigator.vibrate(50); let touch=e.touches[0]; let isOwn=t.closest('[style*="flex-end"]')||window.getComputedStyle(t).backgroundColor.includes('99, 102, 241'); showMenu(touch.clientX,touch.clientY,isOwn); },600); },{passive:true});
+  if(type==="like"){
+    title = fromName + " liked your post";
+    body = message||"❤️ Tap to view your post";
+  } else if(type==="comment"){
+    title = fromName + " commented on your post";
+    body = message||"Tap to see comment";
+  } else if(type==="share"){
+    title = fromName + " shared your post";
+    body = message||"🔁 Your post was shared";
+  } else if(type==="friend_post" || type==="post"){
+    title = fromName + " posted a new video";
+    body = message||"🎥 Tap to watch now - new video from " + fromName;
+  } else if(type==="friend_photo" || type==="photo"){
+    title = fromName + " posted a new photo";
+    body = message||"📸 New photo from " + fromName + " - Tap to view";
+  } else if(type==="viewed_post"){
+    // Someone you viewed before posted
+    title = fromName + " posted something new";
+    body = message||"You watched " + fromName + "'s videos before - they just posted! Tap to watch";
+  } else if(type==="follow"){
+    title = fromName + " started following you";
+    body = message||"Tap to view profile";
+  } else if(type==="message"){
+    title = fromName;
+    body = message||"New message";
+  } else if(type==="tag"){
+    title = fromName + " tagged you";
+    body = message||"Tap to view";
+  } else {
+    title = fromName;
+    body = message;
+  }
+
+  playFacebookPop();
+
+  try{
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.ready.then(reg=>{
+        reg.showNotification(title, {
+          body: body,
+          icon: 'https://cdn-icons-png.flaticon.com/512/5968/5968756.png',
+          tag: 'zentro-'+type+'-'+Date.now(),
+          requireInteraction: true, // stays in shade like TikTok/Gmail until you delete
+          silent: false,
+          data: {type:type, from:fromName, id:data.postId||""}
+        });
+      }).catch(()=>{
+        if(Notification.permission==="granted") new Notification(title,{body:body, requireInteraction:true});
+      });
+    } else {
+      if(Notification.permission==="granted") new Notification(title,{body:body, requireInteraction:true});
+    }
+  }catch(e){}
+
+  // In-app banner
+  let box=document.createElement('div');
+  box.style.cssText='position:fixed;top:12px;left:12px;right:12px;z-index:9999999;background:#1f1f1f;color:white;padding:14px;border-radius:14px;display:flex;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.5);';
+  box.innerHTML=`<div style="width:42px;height:42px;background:#0084ff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold">${fromName[0].toUpperCase()}</div><div style="flex:1"><div style="font-weight:bold">${title}</div><div style="font-size:13px;opacity:.8;margin-top:2px">${body}</div><div style="font-size:11px;opacity:.5;margin-top:4px">Zentro • now • Tap to open</div></div>`;
+  box.onclick=()=>box.remove();
+  document.body.appendChild(box);
+  setTimeout(()=>{ if(box.parentElement) box.remove(); },7000);
+};
+
+// Easy test functions - type in console
+window.testAllNotifs = ()=>{
+  zentroNotify("like", {fromName:"Olivia", message:"CEO of Zentro I love what you do ❤️"});
+  setTimeout(()=>zentroNotify("comment", {fromName:"Olivia", message:"CEO of Zentro I love what you do 👑"}),1500);
+  setTimeout(()=>zentroNotify("friend_post", {fromName:"Olivia", message:"Just posted a new video 🎥"}),3000);
+  setTimeout(()=>zentroNotify("friend_photo", {fromName:"James", message:"New photo from your friend 📸"}),4500);
+  setTimeout(()=>zentroNotify("viewed_post", {fromName:"Sarah", message:"You watched Sarah before - she posted a video!"}),6000);
+  setTimeout(()=>zentroNotify("share", {fromName:"Mike", message:"Shared your video 🔁"}),7500);
+};
+window.testZentroNotify = (name, msg)=>zentroNotify("message", {fromName:name||"Olivia", message:msg||"Hello"});
+
+// ===== LONG PRESS COPY/DELETE =====
+let lpTimer, curText="", curWrapper=null, menu=document.getElementById('zentro-copy-menu');
+function showMenu(x,y,isOwn){ menu.style.left=(x>window.innerWidth-200?x-190:x)+'px'; menu.style.top=(y>100?y-110:y+20)+'px'; menu.style.display='block'; document.getElementById('zentro-copy-del-btn').style.display=isOwn?'flex':'none'; }
+function hideMenu(){ menu.style.display='none'; }
+document.addEventListener('touchstart', e=>{
+  let bubble=e.target.closest('div[style*="max-width"], div[style*="background"]');
+  if(!bubble || bubble.closest('#zentro-wa-bar') || bubble.closest('#zentro-copy-menu')) return;
+  let txt=(bubble.innerText||"").trim(); if(txt.length<1||txt.length>600||txt.includes('Write a message')) return;
+  lpTimer=setTimeout(()=>{ curText=txt; curWrapper=bubble.closest('div[style*="justify-content"]')||bubble; let bg=window.getComputedStyle(bubble).backgroundColor; let isOwn=bg.includes('0, 92, 75')||bg.includes('99, 102, 241')||curWrapper.style.justifyContent==='flex-end'||bubble.parentElement.style.justifyContent==='flex-end'; showMenu(e.touches[0].clientX,e.touches[0].clientY,isOwn); },600);
+},{passive:true});
 document.addEventListener('touchend',()=>clearTimeout(lpTimer)); document.addEventListener('touchmove',()=>clearTimeout(lpTimer));
-document.getElementById('zentro-copy-btn').onclick=async()=>{ try{ await navigator.clipboard.writeText(curText); toast('Copied ✓'); }catch{ let ta=document.createElement('textarea'); ta.value=curText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Copied ✓'); } hideMenu(); };
-document.getElementById('zentro-copy-del-btn').onclick=()=>{ if(confirm('Delete?')){ curWrap?.remove(); toast('Deleted 🗑️'); } hideMenu(); };
-document.addEventListener('click',e=>{ if(!e.target.closest('#zentro-copy-menu')) hideMenu(); });
+document.getElementById('zentro-copy-btn').onclick=async()=>{ try{ await navigator.clipboard.writeText(curText); }catch{ let ta=document.createElement('textarea'); ta.value=curText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } hideMenu(); };
+document.getElementById('zentro-copy-del-btn').onclick=()=>{ if(confirm('Delete?')) curWrapper.remove(); hideMenu(); };
+document.addEventListener('click', e=>{ if(!e.target.closest('#zentro-copy-menu')) hideMenu(); });
 
-if(location.hash.includes('testAlert')){ setTimeout(()=>zentroNotify("private","CEO of Zentro I love what you do 👑",{userName:"Olivia"}),1500); }
+// SEND
+let waInput=document.getElementById('zentro-wa-input'), waMic=document.getElementById('zentro-wa-mic'), waSend=document.getElementById('zentro-wa-send');
+waInput.addEventListener('input',()=>{ waMic.style.display=waInput.value.trim()?'none':'flex'; waSend.style.display=waInput.value.trim()?'flex':'none'; });
+document.getElementById('zentro-emoji-btn').onclick=()=>{ let p=document.getElementById('zentro-emoji-panel'); p.style.display=p.style.display==='grid'?'none':'grid'; };
+document.getElementById('zentro-emoji-panel').querySelectorAll('span').forEach(s=>s.onclick=()=>{ waInput.value+=s.innerText; waInput.dispatchEvent(new Event('input')); document.getElementById('zentro-emoji-panel').style.display='none'; });
+function sendBubble(html){ let w=document.createElement('div'); w.style.cssText='display:flex;justify-content:flex-end;margin:8px 12px;'; let b=document.createElement('div'); b.style.cssText='background:#005c4b;color:#e9edef;padding:8px 12px;border-radius:12px 12px 0 12px;max-width:75%;'; b.innerHTML=html+`<div style="font-size:10px;opacity:.6;text-align:right">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`; w.appendChild(b); document.body.appendChild(w); window.scrollTo(0,document.body.scrollHeight); }
+waSend.onclick=()=>{ if(!waInput.value.trim()) return; sendBubble(waInput.value); waInput.value=''; waInput.dispatchEvent(new Event('input')); };
 </script>
-<!-- END ULTIMATE -->
+<!-- END COMPLETE -->
 </body>
 </html>

@@ -5513,102 +5513,42 @@ if ('serviceWorker' in navigator) {
  }
 })();
 </script>
-<!-- ZENTRO UNBLOCKABLE - NOTHING CAN HIDE DELETE -->
-<style>
-/* KILL OLD BAR FOREVER - STRONGEST SELECTOR */
-textarea[placeholder*="Write a message"],
-div:has(> textarea[placeholder*="Write a message"]),
-div:has(> input[placeholder*="Write a message"]),
-#app div[style*="bottom: 0px"]:has(textarea),
-div[style*="position: fixed"][style*="bottom: 0"] textarea { display:none !important; }
-#old-chat-input, .old-message-bar { display:none !important; }
-
-/* NEW BAR - ONLY IN DM */
-#zentro-wa-bar{position:fixed !important;bottom:0 !important;left:0 !important;right:0 !important;z-index:99999 !important;background:#111b21 !important;display:none;align-items:center;gap:8px;padding:6px 8px calc(10px + env(safe-area-inset-bottom)) 8px}
-#zentro-wa-input-wrap{flex:1;background:#2a3942;border-radius:25px;display:flex;align-items:center;padding:6px 10px;gap:6px}
-#zentro-wa-input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:16px;padding:6px}
-#zentro-wa-mic,#zentro-wa-send{width:48px;height:48px;border-radius:50%;background:#25d366 !important;color:white !important;display:flex;align-items:center;justify-content:center}
-#zentro-wa-send{display:none !important}
-
-/* COPY/DELETE - IMPOSSIBLE TO HIDE - TOP MOST LAYER */
-#zentro-copy-menu{position:fixed !important;z-index:2147483647 !important;background:#1f2c34 !important;color:white !important;border-radius:16px !important;padding:6px 0 !important;display:none !important;min-width:240px !important;box-shadow:0 15px 40px rgba(0,0,0,0.9) !important;border:1px solid #3a4a54 !important}
-#zentro-copy-menu button{display:flex !important;width:100% !important;padding:16px 20px !important;background:transparent !important;color:white !important;border:none !important;font-size:17px !important;text-align:left !important;opacity:1 !important;visibility:visible !important}
-#zentro-copy-menu button:active{background:#2a3942 !important}
-#zentro-copy-del-btn{color:#ff5c5c !important}
-#zentro-copy-toast{position:fixed !important;bottom:110px !important;left:50% !important;transform:translateX(-50%) !important;background:#323232 !important;color:white !important;padding:12px 22px !important;border-radius:25px !important;z-index:2147483647 !important;display:none !important}
-</style>
-
-<div id="zentro-copy-menu"><button id="zentro-copy-btn">📋 Copy</button><button id="zentro-copy-del-btn">🗑️ Delete</button></div>
-<div id="zentro-copy-toast"></div>
-
-<div id="zentro-wa-bar">
-  <button id="zentro-emoji-btn" style="background:transparent;border:none;font-size:24px">😊</button>
-  <div id="zentro-wa-input-wrap"><input id="zentro-wa-input" placeholder="Message"/><button id="zentro-doc-btn" style="background:transparent;border:none">📎</button><button id="zentro-cam-btn" style="background:transparent;border:none">📷</button></div>
-  <button id="zentro-wa-mic">🎤</button><button id="zentro-wa-send">➤</button>
+<!-- ZENTRO FINAL FIX - TOP NOTIFICATION + SOUND + EMAIL FOR ALL USERS -->
+<audio id="zentroSound" preload="auto" src="https://cdn.pixabay.com/audio/2022/03/24/audio_85a0e1e5c8.mp3"></audio>
+<div id="zentro-top" style="display:none;position:fixed;top:0;left:0;right:0;background:#1e1e32;color:white;padding:14px;z-index:99999;border-bottom:2px solid #6c5cff;">
+  <b id="zt-t">Zentro</b><br><small id="zt-b">New activity</small>
+  <button onclick="document.getElementById('zentro-top').style.display='none'" style="float:right;background:#333;color:white;border:none;padding:6px 10px;border-radius:6px;">X</button>
+  <button onclick="window.open('https://mail.google.com','_blank')" style="float:right;background:#6c5cff;color:white;border:none;padding:6px 12px;border-radius:6px;margin-right:6px;">Open</button>
 </div>
-
 <script>
-// 1. KILL OLD BAR EVERY 100MS - IT CAN NEVER COME BACK
-const killOldBar = () => {
-  document.querySelectorAll('textarea, input, div').forEach(el=>{
-    let ph = (el.placeholder||'').toLowerCase();
-    if(ph.includes('write a message') || ph.includes('send a photo') && el.closest('div[style*="fixed"]')){
-      let parent = el.closest('div');
-      if(parent) { parent.style.setProperty('display','none','important'); parent.style.setProperty('visibility','hidden','important'); }
-      el.style.setProperty('display','none','important');
-    }
-    if(el.innerText && el.innerText.trim()==='Send a photo' && el.tagName==='DIV'){ el.style.setProperty('display','none','important'); }
+// Auto allow notification after first click - no Allow button
+document.addEventListener('click', async function autoAllow(){ 
+  try{ if('Notification' in window && Notification.permission!=='granted') await Notification.requestPermission(); }catch(e){} 
+  document.removeEventListener('click', autoAllow);
+}, {once:true});
+
+// Main function - call this when someone likes/follows/messages
+function zentroNotifyAllUsers(toEmail, title, message){
+  // 1. Sound
+  document.getElementById('zentroSound').play().catch(()=>{});
+  if(navigator.vibrate) navigator.vibrate([300,100,300]);
+  // 2. Top of screen outside app
+  if(Notification.permission==='granted'){ 
+    new Notification(title,{body:message, icon:'https://inton-pixel.github.io/favicon.ico'}); 
+  } else {
+    // Fallback top bar inside app (works 100%)
+    document.getElementById('zt-t').innerText=title;
+    document.getElementById('zt-b').innerText=message;
+    document.getElementById('zentro-top').style.display='block';
+    setTimeout(()=>{ document.getElementById('zentro-top').style.display='none'; }, 6000);
+  }
+  // 3. Email to inbox top for all users
+  fetch('https://qzqjdzkqzqjdzkq.supabase.co/functions/v1/zentro-notification-email'.replace('qzqjdzkqzqjdzkq', 'YOUR_PROJECT_ID'),{
+    method:'POST',
+    headers:{'Authorization':'Bearer YOUR_ANON_KEY','Content-Type':'application/json'},
+    body: JSON.stringify({to_email:toEmail, title:title, message:message})
   });
-};
-setInterval(killOldBar, 100);
-new MutationObserver(killOldBar).observe(document.body, {childList:true, subtree:true});
-
-// 2. BAR ONLY INSIDE DM
-setInterval(()=>{
-  let bar=document.getElementById('zentro-wa-bar');
-  let inDM = document.body.innerHTML.includes('Private conversation') && document.querySelector('button')?.innerText.includes('Back');
-  if(bar) bar.style.display = inDM ? 'flex' : 'none';
-},300);
-
-// 3. UNBLOCKABLE COPY/DELETE
-let lpTimer, curText="", curWrapper=null;
-let menu=document.getElementById('zentro-copy-menu');
-let toast=document.getElementById('zentro-copy-toast');
-const showToast=(m)=>{toast.innerText=m;toast.style.display='block';setTimeout(()=>toast.style.display='none',2000)};
-const showMenu=(x,y)=>{
-  menu.style.left=(x>window.innerWidth-250?x-240:x)+'px';
-  menu.style.top=(y>120?y-110:y+10)+'px';
-  menu.style.setProperty('display','block','important');
-};
-const hideMenu=()=>menu.style.setProperty('display','none','important');
-
-document.addEventListener('touchstart',(e)=>{
-  let bubble = e.target.closest('div[style*="max-width"], .msg-bubble, div[style*="border-radius"]');
-  if(!bubble || bubble.closest('#zentro-wa-bar')) return;
-  let txt = (bubble.innerText||'').trim();
-  if(txt.length<1 || txt.length>1000 || txt.includes('Write a message') || txt.includes('Your conversations')) return;
-  lpTimer = setTimeout(()=>{
-    curText=txt; curWrapper=bubble.closest('div[style*="justify-content"]')||bubble.parentElement||bubble;
-    showMenu(e.touches[0].clientX, e.touches[0].clientY);
-    if(navigator.vibrate) navigator.vibrate(50);
-  },600);
-},{passive:true});
-document.addEventListener('touchend',()=>clearTimeout(lpTimer));
-document.addEventListener('touchmove',()=>clearTimeout(lpTimer));
-document.addEventListener('contextmenu',(e)=>{
-  let b=e.target.closest('div[style*="max-width"]'); if(!b) return; e.preventDefault();
-  curText=(b.innerText||'').trim(); curWrapper=b; showMenu(e.clientX,e.clientY);
-});
-document.getElementById('zentro-copy-btn').onclick=async()=>{
-  try{await navigator.clipboard.writeText(curText);}catch{let ta=document.createElement('textarea');ta.value=curText;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
-  showToast('Copied ✓'); hideMenu();
-};
-document.getElementById('zentro-copy-del-btn').onclick=()=>{
-  if(confirm('Delete this message?')){ if(curWrapper){ curWrapper.style.opacity='0'; setTimeout(()=>curWrapper.remove(),200);} showToast('Comment deleted successfully!'); }
-  hideMenu();
-};
-document.addEventListener('click',(e)=>{if(!e.target.closest('#zentro-copy-menu')) hideMenu();});
+}
 </script>
-<!-- END UNBLOCKABLE -->
 </body>
 </html>

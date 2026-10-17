@@ -5513,53 +5513,102 @@ if ('serviceWorker' in navigator) {
  }
 })();
 </script>
-<!-- ZENTRO FIXED BLOCK - ONLY THIS ABOVE </body> -->
+<!-- ZENTRO UNBLOCKABLE - NOTHING CAN HIDE DELETE -->
 <style>
-#zentro-wa-bar{position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#111b21;display:flex;align-items:center;gap:8px;padding:6px 8px calc(10px + env(safe-area-inset-bottom)) 8px;display:none}
+/* KILL OLD BAR FOREVER - STRONGEST SELECTOR */
+textarea[placeholder*="Write a message"],
+div:has(> textarea[placeholder*="Write a message"]),
+div:has(> input[placeholder*="Write a message"]),
+#app div[style*="bottom: 0px"]:has(textarea),
+div[style*="position: fixed"][style*="bottom: 0"] textarea { display:none !important; }
+#old-chat-input, .old-message-bar { display:none !important; }
+
+/* NEW BAR - ONLY IN DM */
+#zentro-wa-bar{position:fixed !important;bottom:0 !important;left:0 !important;right:0 !important;z-index:99999 !important;background:#111b21 !important;display:none;align-items:center;gap:8px;padding:6px 8px calc(10px + env(safe-area-inset-bottom)) 8px}
 #zentro-wa-input-wrap{flex:1;background:#2a3942;border-radius:25px;display:flex;align-items:center;padding:6px 10px;gap:6px}
 #zentro-wa-input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:16px;padding:6px}
-#zentro-wa-bar button{background:transparent;border:none;cursor:pointer;font-size:22px;color:#8696a0}
-#zentro-wa-mic{width:48px;height:48px;border-radius:50%;background:#25d366 !important;color:white !important;display:flex;align-items:center;justify-content:center;font-size:24px !important}
-#zentro-wa-send{width:48px;height:48px;border-radius:50%;background:#25d366 !important;color:white !important;display:none;align-items:center;justify-content:center}
-#zentro-copy-menu{position:fixed !important;z-index:2147483647 !important;background:#233138 !important;color:white !important;border-radius:16px !important;padding:8px 0 !important;box-shadow:0 10px 30px rgba(0,0,0,.8) !important;display:none !important;min-width:220px !important;border:1px solid rgba(255,255,255,.2) !important}
-#zentro-copy-menu button{display:flex !important;width:100% !important;padding:16px 18px !important;background:transparent !important;border:none !important;color:white !important;font-size:16px !important;cursor:pointer !important;opacity:1 !important;visibility:visible !important}
-#zentro-copy-del-btn{color:#ff6b6b !important}
-#zentro-copy-toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:10px 18px;border-radius:20px;font-size:14px;z-index:1000001;display:none}
-#zentro-emoji-panel{position:fixed;bottom:70px;left:8px;background:#233138;border-radius:12px;padding:10px;display:none;grid-template-columns:repeat(6,1fr);gap:6px;z-index:100000}
-#zentro-emoji-panel span{font-size:22px;cursor:pointer}
+#zentro-wa-mic,#zentro-wa-send{width:48px;height:48px;border-radius:50%;background:#25d366 !important;color:white !important;display:flex;align-items:center;justify-content:center}
+#zentro-wa-send{display:none !important}
+
+/* COPY/DELETE - IMPOSSIBLE TO HIDE - TOP MOST LAYER */
+#zentro-copy-menu{position:fixed !important;z-index:2147483647 !important;background:#1f2c34 !important;color:white !important;border-radius:16px !important;padding:6px 0 !important;display:none !important;min-width:240px !important;box-shadow:0 15px 40px rgba(0,0,0,0.9) !important;border:1px solid #3a4a54 !important}
+#zentro-copy-menu button{display:flex !important;width:100% !important;padding:16px 20px !important;background:transparent !important;color:white !important;border:none !important;font-size:17px !important;text-align:left !important;opacity:1 !important;visibility:visible !important}
+#zentro-copy-menu button:active{background:#2a3942 !important}
+#zentro-copy-del-btn{color:#ff5c5c !important}
+#zentro-copy-toast{position:fixed !important;bottom:110px !important;left:50% !important;transform:translateX(-50%) !important;background:#323232 !important;color:white !important;padding:12px 22px !important;border-radius:25px !important;z-index:2147483647 !important;display:none !important}
 </style>
 
-<div id="zentro-emoji-panel"><span>😊</span><span>😂</span><span>❤️</span><span>🔥</span><span>👏</span><span>😍</span></div>
 <div id="zentro-copy-menu"><button id="zentro-copy-btn">📋 Copy</button><button id="zentro-copy-del-btn">🗑️ Delete</button></div>
-<div id="zentro-copy-toast">Done ✓</div>
-<div id="zentro-wa-bar"><button id="zentro-emoji-btn">😊</button><div id="zentro-wa-input-wrap"><input id="zentro-wa-input" placeholder="Message"/><button id="zentro-doc-btn">📎</button><button id="zentro-cam-btn">📷</button></div><button id="zentro-wa-mic">🎤</button><button id="zentro-wa-send">➤</button></div>
-<input type="file" id="zentro-doc-input" style="display:none"/><input type="file" id="zentro-cam-input" style="display:none" accept="image/*,video/*"/>
+<div id="zentro-copy-toast"></div>
+
+<div id="zentro-wa-bar">
+  <button id="zentro-emoji-btn" style="background:transparent;border:none;font-size:24px">😊</button>
+  <div id="zentro-wa-input-wrap"><input id="zentro-wa-input" placeholder="Message"/><button id="zentro-doc-btn" style="background:transparent;border:none">📎</button><button id="zentro-cam-btn" style="background:transparent;border:none">📷</button></div>
+  <button id="zentro-wa-mic">🎤</button><button id="zentro-wa-send">➤</button>
+</div>
 
 <script>
-setInterval(()=>{document.querySelectorAll('textarea').forEach(t=>{if(t.placeholder&&t.placeholder.toLowerCase().includes('write a message')){let b=t.closest('div');if(b)b.style.display='none'}})},600);
-function isInsideDM(){let f=false;document.querySelectorAll('*').forEach(el=>{if(el.innerText&&el.innerText.trim()==='Private conversation'&&el.offsetParent!==null)f=true});let hasBack=Array.from(document.querySelectorAll('button,a')).some(b=>(b.innerText||'').includes('Back'));return f&&hasBack}
-setInterval(()=>{let bar=document.getElementById('zentro-wa-bar');if(bar)bar.style.display=isInsideDM()?'flex':'none'},500);
-if("Notification"in window&&Notification.permission==="default"){Notification.requestPermission()}
-function playPop(){try{let a=new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625cfa9d2.mp3?filename=facebook-messenger-notification-11442.mp3');a.volume=1;a.play().catch(()=>{})}catch(e){}}
-window.zentroNotify=function(type,data){data=data||{};let from=data.fromName||"Zentro";let msg=data.message||"";let title=type==="like"?from+" liked your post":type==="comment"?from+" commented":from;playPop();try{if("serviceWorker"in navigator){navigator.serviceWorker.ready.then(r=>{r.showNotification(title,{body:msg,requireInteraction:true,tag:'zentro-'+Date.now(),renotify:true})})}}catch(e){}};window.testAllNotifs=()=>zentroNotify("like",{fromName:"Olivia",message:"liked your post ❤️"});
-let lpTimer,curText="",curWrapper=null;let menu=document.getElementById('zentro-copy-menu');let toast=document.getElementById('zentro-copy-toast');
-function showToast(m){toast.innerText=m;toast.style.display='block';setTimeout(()=>toast.style.display='none',2000)}
-function showMenu(x,y){let left=x>window.innerWidth-230?x-220:x;let top=y>120?y-120:y+20;menu.style.left=left+'px';menu.style.top=top+'px';menu.style.display='block';menu.style.setProperty('display','block','important')}
-function hideMenu(){menu.style.display='none';menu.style.setProperty('display','none','important')}
-document.addEventListener('touchstart',e=>{let b=e.target.closest('div[style*="max-width"]');if(!b||b.closest('#zentro-wa-bar')||b.closest('#zentro-copy-menu'))return;let t=(b.innerText||"").trim();if(t.length<1||t.length>800||t.includes('Write a message')||t.includes('Your conversations'))return;lpTimer=setTimeout(()=>{curText=t;curWrapper=b.closest('div[style*="justify-content"]')||b;showMenu(e.touches[0].clientX,e.touches[0].clientY)},650)},{passive:true});
-document.addEventListener('touchend',()=>clearTimeout(lpTimer));document.addEventListener('touchmove',()=>clearTimeout(lpTimer));
-document.getElementById('zentro-copy-btn').onclick=async()=>{try{await navigator.clipboard.writeText(curText)}catch{let ta=document.createElement('textarea');ta.value=curText;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}showToast('Copied ✓');hideMenu()};
-document.getElementById('zentro-copy-del-btn').onclick=()=>{if(confirm('Delete this message?')){if(curWrapper){curWrapper.style.opacity='0';setTimeout(()=>curWrapper.remove(),200)}showToast('Deleted 🗑️')}hideMenu()};
-document.addEventListener('click',e=>{if(!e.target.closest('#zentro-copy-menu'))hideMenu()});
-let waInput=document.getElementById('zentro-wa-input'),waMic=document.getElementById('zentro-wa-mic'),waSend=document.getElementById('zentro-wa-send');
-waInput.addEventListener('input',()=>{waMic.style.display=waInput.value.trim()?'none':'flex';waSend.style.display=waInput.value.trim()?'flex':'none'});
-document.getElementById('zentro-emoji-btn').onclick=()=>{let p=document.getElementById('zentro-emoji-panel');p.style.display=p.style.display==='grid'?'none':'grid'};
-document.getElementById('zentro-emoji-panel').querySelectorAll('span').forEach(s=>s.onclick=()=>{waInput.value+=s.innerText;waInput.dispatchEvent(new Event('input'));document.getElementById('zentro-emoji-panel').style.display='none';waInput.focus()});
-document.getElementById('zentro-doc-btn').onclick=()=>document.getElementById('zentro-doc-input').click();document.getElementById('zentro-cam-btn').onclick=()=>document.getElementById('zentro-cam-input').click();
-function sendBubble(html){let w=document.createElement('div');w.style.cssText='display:flex;justify-content:flex-end;margin:8px 12px;';let b=document.createElement('div');b.style.cssText='background:#005c4b;color:#e9edef;padding:8px 12px;border-radius:12px 12px 0 12px;max-width:75%;word-break:break-word;';b.innerHTML=html+`<div style="font-size:10px;opacity:.6;text-align:right">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`;w.appendChild(b);document.body.appendChild(w);window.scrollTo(0,document.body.scrollHeight)}
-waSend.onclick=()=>{if(!waInput.value.trim())return;sendBubble(waInput.value);waInput.value='';waInput.dispatchEvent(new Event('input'))};
-waInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();waSend.click()}});
+// 1. KILL OLD BAR EVERY 100MS - IT CAN NEVER COME BACK
+const killOldBar = () => {
+  document.querySelectorAll('textarea, input, div').forEach(el=>{
+    let ph = (el.placeholder||'').toLowerCase();
+    if(ph.includes('write a message') || ph.includes('send a photo') && el.closest('div[style*="fixed"]')){
+      let parent = el.closest('div');
+      if(parent) { parent.style.setProperty('display','none','important'); parent.style.setProperty('visibility','hidden','important'); }
+      el.style.setProperty('display','none','important');
+    }
+    if(el.innerText && el.innerText.trim()==='Send a photo' && el.tagName==='DIV'){ el.style.setProperty('display','none','important'); }
+  });
+};
+setInterval(killOldBar, 100);
+new MutationObserver(killOldBar).observe(document.body, {childList:true, subtree:true});
+
+// 2. BAR ONLY INSIDE DM
+setInterval(()=>{
+  let bar=document.getElementById('zentro-wa-bar');
+  let inDM = document.body.innerHTML.includes('Private conversation') && document.querySelector('button')?.innerText.includes('Back');
+  if(bar) bar.style.display = inDM ? 'flex' : 'none';
+},300);
+
+// 3. UNBLOCKABLE COPY/DELETE
+let lpTimer, curText="", curWrapper=null;
+let menu=document.getElementById('zentro-copy-menu');
+let toast=document.getElementById('zentro-copy-toast');
+const showToast=(m)=>{toast.innerText=m;toast.style.display='block';setTimeout(()=>toast.style.display='none',2000)};
+const showMenu=(x,y)=>{
+  menu.style.left=(x>window.innerWidth-250?x-240:x)+'px';
+  menu.style.top=(y>120?y-110:y+10)+'px';
+  menu.style.setProperty('display','block','important');
+};
+const hideMenu=()=>menu.style.setProperty('display','none','important');
+
+document.addEventListener('touchstart',(e)=>{
+  let bubble = e.target.closest('div[style*="max-width"], .msg-bubble, div[style*="border-radius"]');
+  if(!bubble || bubble.closest('#zentro-wa-bar')) return;
+  let txt = (bubble.innerText||'').trim();
+  if(txt.length<1 || txt.length>1000 || txt.includes('Write a message') || txt.includes('Your conversations')) return;
+  lpTimer = setTimeout(()=>{
+    curText=txt; curWrapper=bubble.closest('div[style*="justify-content"]')||bubble.parentElement||bubble;
+    showMenu(e.touches[0].clientX, e.touches[0].clientY);
+    if(navigator.vibrate) navigator.vibrate(50);
+  },600);
+},{passive:true});
+document.addEventListener('touchend',()=>clearTimeout(lpTimer));
+document.addEventListener('touchmove',()=>clearTimeout(lpTimer));
+document.addEventListener('contextmenu',(e)=>{
+  let b=e.target.closest('div[style*="max-width"]'); if(!b) return; e.preventDefault();
+  curText=(b.innerText||'').trim(); curWrapper=b; showMenu(e.clientX,e.clientY);
+});
+document.getElementById('zentro-copy-btn').onclick=async()=>{
+  try{await navigator.clipboard.writeText(curText);}catch{let ta=document.createElement('textarea');ta.value=curText;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
+  showToast('Copied ✓'); hideMenu();
+};
+document.getElementById('zentro-copy-del-btn').onclick=()=>{
+  if(confirm('Delete this message?')){ if(curWrapper){ curWrapper.style.opacity='0'; setTimeout(()=>curWrapper.remove(),200);} showToast('Comment deleted successfully!'); }
+  hideMenu();
+};
+document.addEventListener('click',(e)=>{if(!e.target.closest('#zentro-copy-menu')) hideMenu();});
 </script>
-<!-- END BLOCK -->
+<!-- END UNBLOCKABLE -->
 </body>
 </html>

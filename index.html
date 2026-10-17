@@ -5587,6 +5587,10 @@ window.zentroNotify = function(type, msg){
   if(type==="area") title="📍 Near You";
   zentroForceAlert(title, msg);
 }
+  // DIRECT TEST LINK - AUTO DING
+if(location.hash.includes('testAlert')){
+  setTimeout(()=>{zentroNotify("founder","Testing Zentro alerts - WORKS! 👑")},1500);
+    }
 </script>
 <!-- END FORCE-ON CODE -->
 

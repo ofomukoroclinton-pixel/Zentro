@@ -1,0 +1,63 @@
+
+ZENTRO - COMPLETE SOCIAL APP
+Documentation v1.0
+Author: Clinton Ofomukoro
+Founder & CEO - ZENTRO
+Oghara, Delta State, Nigeria
+
+
+1. OVERVIEW
+ZENTRO is a certified 8-in-1 social platform for real people, meaningful connections.
+Features: Home Feed, Discover, Matches, Messages, Profile, Videos, Communities, Live & Audio, Stories, Notifications, Settings, Saved Posts, Announcements, Help & Safety, Founder Dashboard, Blue Tick Verification, Dark Mode, PWA.
+
+2. REQUIREMENTS
+- Supabase account (FREE at supabase.com)
+- Web hosting (Hostinger, cPanel, Vercel, Netlify)
+- Modern browser
+- No other dependencies
+
+3. INSTALLATION - STEP BY STEP
+STEP A: Supabase Setup (5 mins)
+1. Go to https://supabase.com > Sign Up (Free)
+2. Click New Project > Name: ZENTRO > Create password > Create Project (wait 2 mins)
+3. Left Menu > SQL Editor > New Query
+4. Open file database/supabase-setup.sql > Copy All > Paste in SQL Editor > Click RUN > Should show Success
+5. Left Menu > Project Settings > API > Copy Project URL and anon/public key
+
+STEP B: Configure App (2 mins)
+1. Open index.html in Notepad / VS Code
+2. Search (Ctrl+F) for SUPABASE_URL
+3. Replace YOUR_SUPABASE_URL with your copied URL
+4. Replace YOUR_SUPABASE_KEY with your anon key
+5. Save file
+
+STEP C: Deploy (2 mins)
+- cPanel/Hostinger: File Manager > public_html > Upload all files
+- Vercel: Go to vercel.com > New Project > Upload folder
+- Netlify: app.netlify.com/drop > Drag folder > Get live link
+
+STEP D: Test
+Visit your domain > Create account > Create post > Test messages
+
+4. FILE STRUCTURE
+index.html - Main app
+manifest.json - PWA config
+service-worker.js - Offline support
+icons/icon-192.png - 192x192 icon
+icons/icon-512.png - 512x512 icon
+database/supabase-setup.sql - Database schema (8 tables)
+documentation/ZENTRO-Documentation.pdf - This file
+README.txt - Quick start
+
+5. CUSTOMIZATION
+- Logo: Replace icons/icon-192.png and icon-512.png (keep same names)
+- App Name: Change ZENTRO to your name in index.html and manifest.json
+- Colors: In index.html search for #8B5CF6 and replace
+- Founder: Search Clinton Ofomukoro and replace
+
+6. SUPPORT
+Email: clintonofomukoro@gmail.com
+Support: 6 months free setup support
+License: Regular 1 domain, Extended unlimited
+
+Thank you for buying ZENTRO!

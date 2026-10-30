@@ -1157,11 +1157,10 @@ a {
       <!-- SETTINGS -->
       <section id="page-settings" class="page">
         <h1 class="page-title">Settings & Safety</h1>
-        <div class="card" id="zentroPushSettingsCard">
-          <h3>Phone notifications</h3>
-          <p class="muted">Enable Zentro notifications for new messages and activity. Background delivery requires the Zentro push service to be configured.</p>
-          <button id="zentroEnablePushButton" class="primary" type="button" style="width:100%">Enable phone notifications</button>
-          <small id="zentroPushStatus" class="muted" style="display:block;margin-top:8px">Not enabled on this device yet.</small>
+        <div class="card" id="zentroPushSettingsCard" aria-live="polite">
+          <h3>Notifications</h3>
+          <p class="muted">Zentro notifications are managed automatically on this device. Allow notifications in your phone or browser settings to receive messages and activity alerts.</p>
+          <small id="zentroPushStatus" class="muted" style="display:block;margin-top:8px">Checking this device…</small>
         </div>
 
         <div class="card">
@@ -5637,5 +5636,46 @@ if ('serviceWorker' in navigator) {
   });
 })();
 </script>
+
+<!-- ZENTRO NEXT UI: additive styling and gesture navigation, preserving existing page/content IDs. -->
+<style id="zentro-next-ui-styles">
+:root{--bg:#090d18;--panel:#111827;--panel2:#1c2638;--text:#f4f6ff;--muted:#9aa8c3;--accent:#7867ff;--accent2:#a69cff;--border:rgba(155,170,205,.17)}
+body{background:radial-gradient(ellipse at 15% -10%,rgba(111,88,255,.19),transparent 38%),var(--bg);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.005em}
+.card,.feature-card,.zentro-help-card{border-radius:20px!important;background:linear-gradient(145deg,rgba(24,33,51,.97),rgba(15,22,36,.97));border:1px solid rgba(155,170,205,.16);box-shadow:0 10px 28px rgba(0,0,0,.12)}
+.page-title{font-size:clamp(25px,5vw,32px);font-weight:800;letter-spacing:-.04em;margin-bottom:12px}
+.primary,.secondary,.danger,button{transition:transform .16s ease,filter .16s ease,background .16s ease}
+button:active{transform:scale(.975)}
+input,textarea,select{border-radius:14px!important;background:#0c1321!important;border-color:rgba(155,170,205,.2)!important}
+.nav-btn.active{background:linear-gradient(100deg,rgba(120,103,255,.22),rgba(120,103,255,.07));color:#fff;box-shadow:inset 3px 0 var(--accent)}
+.page.active{animation:zentroPageIn .2s ease both;touch-action:pan-y}
+@keyframes zentroPageIn{from{opacity:.7;transform:translateX(7px)}to{opacity:1;transform:translateX(0)}}
+#zentroPageBack{position:fixed;z-index:50;left:12px;top:calc(env(safe-area-inset-top,0px) + 10px);width:42px;height:42px;border:1px solid var(--border);border-radius:50%;background:rgba(17,24,39,.92);color:var(--text);display:none;box-shadow:0 5px 18px #0005}
+@media(max-width:760px){.card,.feature-card{padding:15px!important}.main-content{padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}}
+@media(prefers-reduced-motion:reduce){.page.active{animation:none}button{transition:none}}
+</style>
+<script id="zentro-next-navigation-and-push">
+(()=>{'use strict';
+// Gesture history supports edge-to-edge back navigation without hijacking vertical scroll.
+const pageIds=[...document.querySelectorAll('.page')].map(x=>x.id.replace(/^page-/,'')).filter(Boolean);
+let current=document.querySelector('.page.active')?.id.replace(/^page-/,'')||'home';const historyStack=[current];let touchStart=null;
+const back=document.createElement('button');back.id='zentroPageBack';back.type='button';back.setAttribute('aria-label','Go back');back.textContent='‹';document.body.appendChild(back);
+function goBack(){if(historyStack.length>1){historyStack.pop();const prior=historyStack[historyStack.length-1];const b=document.querySelector('.nav-btn[data-page="'+prior+'"]');if(b)b.click();else{const p=document.getElementById('page-'+prior);if(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));p.classList.add('active');}}}}
+back.addEventListener('click',goBack);
+function trackNavigation(e){const b=e.target.closest('.nav-btn[data-page],[data-open-page]');if(!b)return;const next=b.dataset.page||b.dataset.openPage;if(!next||next===current)return;historyStack.push(next);if(historyStack.length>30)historyStack.shift();current=next;back.style.display=historyStack.length>1?'block':'none';}
+document.addEventListener('click',trackNavigation,true);
+document.addEventListener('touchstart',e=>{if(e.touches.length===1)touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+document.addEventListener('touchend',e=>{if(!touchStart||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-touchStart.x,dy=e.changedTouches[0].clientY-touchStart.y;touchStart=null;if(Math.abs(dx)<95||Math.abs(dx)<Math.abs(dy)*1.35)return;if(dx>0){goBack();return;}if(dx<0){const active=document.querySelector('.page.active');if(active&&active.scrollWidth>active.clientWidth+12)return;const nextBtn=document.querySelector('.nav-btn[data-page="'+(document.querySelector('.nav-btn[data-page].active')?.dataset.page||'')+'"]');if(nextBtn){const all=[...document.querySelectorAll('.nav-btn[data-page]')].map(x=>x.dataset.page);const idx=all.indexOf(nextBtn.dataset.page);if(idx>=0&&idx<all.length-1)document.querySelector('.nav-btn[data-page="'+all[idx+1]+'"]')?.click();}}},{passive:true});
+// Push is automatic after permission exists; no founder/user-side in-app ON/OFF switch.
+const VAPID='BJcxZHssmnx7fFuXMxhq14R5OA99DB7GvFAjuI8KPqcQyVCoKXwbtDv0tDQ4YKhuCqXkx7lcFGGKAnUgEKzRVS8';
+function bytes(v){const pad='='.repeat((4-v.length%4)%4);const s=atob((v+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(s,c=>c.charCodeAt(0));}
+let busy=false;async function registerPush(){if(busy)return;const user=window.currentUser||(typeof currentUser!=='undefined'?currentUser:null);const sb=window.supabaseClient||(typeof supabaseClient!=='undefined'?supabaseClient:null);const status=document.getElementById('zentroPushStatus');if(!user?.id||!sb||!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return;if(Notification.permission!=='granted'){if(status)status.textContent=Notification.permission==='denied'?'Notifications are blocked by your phone/browser. Enable them in system settings.':'Notifications will activate after you allow them in the browser permission prompt.';return;}if(!VAPID||VAPID.includes('REPLACE_')){if(status)status.textContent='Push service configuration is incomplete.';return;}busy=true;try{await navigator.serviceWorker.register('./service-worker.js');const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:bytes(VAPID)});const j=sub.toJSON();if(!j.endpoint||!j.keys?.p256dh||!j.keys?.auth)throw Error('Incomplete push subscription');const {error}=await sb.from('zentro_push_subscriptions').upsert({user_id:user.id,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,updated_at:new Date().toISOString()},{onConflict:'endpoint'});if(error)throw error;if(status)status.textContent='This device is registered for Zentro activity notifications.';}catch(e){console.error('Automatic Zentro push registration:',e);if(status)status.textContent='Could not register this device for push notifications. Check connection and permission.';}finally{busy=false;}}
+window.zentroRegisterPushAutomatically=registerPush;
+// Coalesce duplicate page refreshes from legacy and new navigation handlers.
+for(const name of ['loadZentroDiscover','loadZentroMatches','loadZentroNotifications','loadZentroCommunities']){try{const original=window[name]||(typeof globalThis[name]==='function'?globalThis[name]:null);if(typeof original!=='function'||original.__zentroCoalesced)continue;let pending=null,lastAt=0;const wrapped=function(...args){const now=Date.now();if(pending)return pending;if(now-lastAt<1800)return Promise.resolve();lastAt=now;pending=Promise.resolve(original.apply(this,args)).finally(()=>{pending=null;});return pending;};wrapped.__zentroCoalesced=true;window[name]=wrapped;globalThis[name]=wrapped;}catch(err){console.warn('Could not coalesce '+name,err);}}
+// Re-check after session restore/sign-in and when returning from phone settings.
+const run=()=>setTimeout(registerPush,900);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();window.addEventListener('focus',run);try{const sb=window.supabaseClient||(typeof supabaseClient!=='undefined'?supabaseClient:null);sb?.auth?.onAuthStateChange((ev,s)=>{if(s?.user)run();});}catch(_){}
+})();
+</script>
+
 </body>
 </html>

@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Zentro",
+    "slug": "zentro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "zentro",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.zentro.app",
+      "associatedDomains": [
+        "applinks:zentro.app"
+      ]
+    },
+    "android": {
+      "package": "com.zentro.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#111111"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "zentro.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#111111"
+        }
+      ],
+      "expo-image-picker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "${EXPO_PUBLIC_EAS_PROJECT_ID}"
+      }
+    }
+  }
+}

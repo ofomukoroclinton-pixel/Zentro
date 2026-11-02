@@ -1,0 +1,6 @@
+   [api]
+   enabled = true
+
+   [project]
+   name = "Zentro"
+   id = "zentro"

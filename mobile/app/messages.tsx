@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { supabase } from "../src/supabase";
+import { supabase } from "../lib/supabase";
 import { useSession } from "../src/session";
 
 type Message = {

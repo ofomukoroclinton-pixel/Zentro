@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { supabase } from "../src/supabase";
+import { supabase } from "../lib/supabase";
 
 type Message = {
   id: string;

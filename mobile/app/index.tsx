@@ -1,6 +1,6 @@
 import { Redirect } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
-import { useSession } from "@/store/session";
+import { useSession } from "../src/session";
 
 export default function Index() {
   const { session, loading } = useSession();

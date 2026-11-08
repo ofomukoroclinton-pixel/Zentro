@@ -109,7 +109,9 @@ export default function RequestVerification() {
   const [documents, setDocuments] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<string[]>([]);
   const [evidence, setEvidence] = useState<Record<string, string[]>>({});
+
   const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
 
   const [followerCount, setFollowerCount] = useState<number | null>(null);
@@ -180,7 +182,7 @@ export default function RequestVerification() {
   }
 
   async function saveDraft() {
-    if (!user) return;
+    if (!user || saving || submitting) return;
 
     setSaving(true);
 
@@ -214,7 +216,7 @@ export default function RequestVerification() {
   }
 
   async function uploadEvidence(key: string) {
-    if (!user) return;
+    if (!user || submitting) return;
 
     const permission =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -306,7 +308,7 @@ export default function RequestVerification() {
     if (step === 2 && categories.length === 0) {
       Alert.alert(
         "Choose a category",
-        "Please select at least one category."
+        "Please select at least one category. If none apply, you cannot continue with this category-based application yet."
       );
       return;
     }
@@ -315,7 +317,7 @@ export default function RequestVerification() {
   }
 
   async function cancelDraft() {
-    if (!user) return;
+    if (!user || submitting) return;
 
     Alert.alert(
       "Start again?",
@@ -346,6 +348,11 @@ export default function RequestVerification() {
             setDocuments({});
             setCategories([]);
             setEvidence({});
+
+            Alert.alert(
+              "Application reset",
+              "You can now start a new application."
+            );
           },
         },
       ]
@@ -353,7 +360,7 @@ export default function RequestVerification() {
   }
 
   async function submitApplication() {
-    if (!user) return;
+    if (!user || submitting) return;
 
     if (checkingFollowers) {
       Alert.alert(
@@ -363,66 +370,101 @@ export default function RequestVerification() {
       return;
     }
 
-    const { data, error } = await supabase.rpc(
-      "get_my_follower_count"
-    );
+    setSubmitting(true);
 
-    if (error) {
-      Alert.alert(
-        "Check failed",
-        "We couldn't verify your follower count."
-      );
-      return;
-    }
+    try {
+      // Always retrieve the actual follower count from Supabase.
+      const { data: followerData, error: followerError } =
+        await supabase.rpc("get_my_follower_count");
 
-    const actualFollowers = Number(data ?? 0);
+      if (followerError) {
+        throw new Error(
+          "We couldn't verify your follower count. Please try again."
+        );
+      }
 
-    setFollowerCount(actualFollowers);
+      const actualFollowers = Number(followerData ?? 0);
 
-    if (actualFollowers < 1000) {
-      Alert.alert(
-        "Not eligible yet",
-        `You currently have ${actualFollowers.toLocaleString()} followers. You need ${(1000 - actualFollowers).toLocaleString()} more followers before applying.`
-      );
-      return;
-    }
+      setFollowerCount(actualFollowers);
 
-    if (
-      !idType ||
-      !documents.government_id ||
-      categories.length === 0
-    ) {
-      Alert.alert(
-        "Incomplete",
-        "Please complete your ID and category information."
-      );
-      return;
-    }
-
-    for (const category of categories) {
-      if (!(evidence[category] || []).length) {
+      if (actualFollowers < 1000) {
         Alert.alert(
-          "Incomplete",
-          `Select supporting evidence for ${category}.`
+          "Not eligible yet",
+          `You currently have ${actualFollowers.toLocaleString()} followers. You need ${(1000 - actualFollowers).toLocaleString()} more followers before applying.`
         );
         return;
       }
 
-      for (const item of evidence[category]) {
-        if (!documents[`${category}:${item}`]) {
+      if (
+        !idType ||
+        !documents.government_id ||
+        categories.length === 0
+      ) {
+        Alert.alert(
+          "Incomplete application",
+          "Please complete your government ID and category information."
+        );
+        return;
+      }
+
+      for (const category of categories) {
+        const selectedEvidence = evidence[category] || [];
+
+        if (selectedEvidence.length === 0) {
           Alert.alert(
-            "Missing evidence",
-            `Please upload: ${item} for ${category}.`
+            "Incomplete evidence",
+            `Please select supporting evidence for ${category}.`
           );
           return;
         }
-      }
-    }
 
-    Alert.alert(
-      "Eligibility confirmed",
-      "Your follower count and application information have passed the initial checks. Secure application submission is not yet enabled."
-    );
+        for (const item of selectedEvidence) {
+          if (!documents[`${category}:${item}`]) {
+            Alert.alert(
+              "Missing evidence",
+              `Please upload: ${item} for ${category}.`
+            );
+            return;
+          }
+        }
+      }
+
+      // Send the completed application to the secure Supabase function.
+      const { data: requestId, error: submissionError } =
+        await supabase.rpc(
+          "submit_zentro_verification",
+          {
+            p_application_data: applicationData(),
+          }
+        );
+
+      if (submissionError) {
+        throw submissionError;
+      }
+
+      if (!requestId) {
+        throw new Error(
+          "The server did not return an application reference. Please contact support before trying again."
+        );
+      }
+
+      // The SQL function deletes the saved draft after successful submission.
+      setDraftId(null);
+
+      Alert.alert(
+        "Application submitted successfully!",
+        `Your Zentro verification application has been received.\n\nApplication reference:\n${requestId}\n\nYour application still requires its planned screening and founder review. Submission does not mean verification has been approved.`
+      );
+
+    } catch (error: any) {
+      Alert.alert(
+        "Submission failed",
+        error.message ||
+          "We couldn't submit your application. Please check your connection and try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (!user) {
@@ -486,6 +528,7 @@ export default function RequestVerification() {
         <Pressable
           style={styles.refreshButton}
           onPress={loadFollowerCount}
+          disabled={checkingFollowers || submitting}
         >
           <Text style={styles.refreshText}>
             Refresh follower count
@@ -516,6 +559,7 @@ export default function RequestVerification() {
                 idType === item && styles.selected,
               ]}
               onPress={() => setIdType(item)}
+              disabled={submitting}
             >
               <Text>
                 {idType === item ? "✓ " : ""}
@@ -533,6 +577,7 @@ export default function RequestVerification() {
               <Pressable
                 style={styles.upload}
                 onPress={() => uploadEvidence("government_id")}
+                disabled={submitting}
               >
                 <Text style={styles.uploadText}>
                   {documents.government_id
@@ -563,6 +608,7 @@ export default function RequestVerification() {
                 categories.includes(category) && styles.selected,
               ]}
               onPress={() => toggleCategory(category)}
+              disabled={submitting}
             >
               <Text>
                 {categories.includes(category) ? "✓ " : "○ "}
@@ -572,11 +618,9 @@ export default function RequestVerification() {
           ))}
 
           <Pressable
-            style={[
-              styles.option,
-              categories.length === 0 && styles.selected,
-            ]}
+            style={styles.option}
             onPress={() => setCategories([])}
+            disabled={submitting}
           >
             <Text>
               {categories.length === 0 ? "✓ " : "○ "}
@@ -612,6 +656,7 @@ export default function RequestVerification() {
                       onPress={() =>
                         toggleEvidence(category, item)
                       }
+                      disabled={submitting}
                     >
                       <Text>
                         {selected ? "✓ " : "○ "}
@@ -623,6 +668,7 @@ export default function RequestVerification() {
                       <Pressable
                         style={styles.upload}
                         onPress={() => uploadEvidence(key)}
+                        disabled={submitting}
                       >
                         <Text style={styles.uploadText}>
                           {documents[key]
@@ -644,6 +690,7 @@ export default function RequestVerification() {
           <Pressable
             style={styles.secondary}
             onPress={() => setStep(step - 1)}
+            disabled={submitting}
           >
             <Text>← Back</Text>
           </Pressable>
@@ -652,7 +699,7 @@ export default function RequestVerification() {
         <Pressable
           style={styles.secondary}
           onPress={saveDraft}
-          disabled={saving}
+          disabled={saving || submitting}
         >
           <Text>
             {saving ? "Saving..." : "Save for Later"}
@@ -663,6 +710,7 @@ export default function RequestVerification() {
           <Pressable
             style={styles.primary}
             onPress={continueStep}
+            disabled={submitting}
           >
             <Text style={styles.white}>
               Continue →
@@ -670,12 +718,20 @@ export default function RequestVerification() {
           </Pressable>
         ) : (
           <Pressable
-            style={styles.primary}
+            style={[
+              styles.primary,
+              submitting && styles.disabled,
+            ]}
             onPress={submitApplication}
+            disabled={submitting || checkingFollowers}
           >
-            <Text style={styles.white}>
-              Check Application
-            </Text>
+            {submitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.white}>
+                Submit Application
+              </Text>
+            )}
           </Pressable>
         )}
       </View>
@@ -683,6 +739,7 @@ export default function RequestVerification() {
       <Pressable
         style={styles.cancel}
         onPress={cancelDraft}
+        disabled={submitting}
       >
         <Text style={{ color: "#c62828" }}>
           Cancel and Start Again
@@ -807,5 +864,8 @@ const styles = StyleSheet.create({
   refreshText: {
     color: "#1764bd",
     fontWeight: "800",
+  },
+  disabled: {
+    opacity: 0.6,
   },
 });

@@ -48,9 +48,9 @@
       "expo-image-picker"
     ],
     "extra": {
-      "eas": {
-        "projectId": "${EXPO_PUBLIC_EAS_PROJECT_ID}"
-      }
+  "eas": {
+    "projectId": "3ff08d04-0edd-4ae3-baf6-f1864361c750"
+  }
     }
   }
 }
